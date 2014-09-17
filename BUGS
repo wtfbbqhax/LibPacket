@@ -1,0 +1,5 @@
+This is a list of known bugs/pitfalls in libpacket
+
+* SCTP Checksuming always reports error 
+* Need to implement ICMP support
+* Current abstraction works best for TCP/IP need to 

@@ -1,0 +1,54 @@
+Installation Instructions for libPacket
+=======================================
+Libpacket uses the well-known configuration(autotools) infrastructure.
+
+    $ ./configure
+    $ make
+    $ make install
+
+If building libpacket from a git checkout you'll need to first run
+autoreconf.
+
+    $ autoreconf -i
+    $ ./configure
+    $ make
+    $ make install
+
+Prerequisites
+=============
+
+    * libpcap (tcpdump.org) - optional
+
+    * build essentials for your environment
+
+Configuring and compiling
+=========================
+
+./configure [options]
+
+--prefix=
+
+    The prefix to put all installed files under. It defaults to
+    /usr/local, so the binaries will go into /usr/local/bin, manpages
+    into /usr/local/share/man, etc.
+
+Caveats
+=======
+
+    LibPacket is still in the 'alpha' stage of development. The API
+    for libpacket is still in flux and liable to changes before its
+    iminent release.
+
+    The following is a list of likely API breaking changes for the
+    future:
+
+        * Libpacket contexts
+
+            This would allow an user to implement multiple 'instances'
+            of libpacket in an application.
+
+        * Further changes to the Packet structure
+
+            Its still unclear what should/should not be push into the
+            packet structure. This requires more thorough analysis of 
+            memory and cpu time.

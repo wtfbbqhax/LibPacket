@@ -1,0 +1,64 @@
+% libpacket(3) LibPacket User Manual | Version 0.0.1
+% Victor Roemer <vroemer@badsec.org>
+% January 14, 2013
+
+NAME
+====
+
+libpacket - Shallow packet inspection library
+
+SYNOPSIS
+========
+**#include <packet/packet.h>**
+
+DESCRIPTION
+===========
+
+~~~~~~~~~~~
+    packet_ack(Packet *packet)
+    packet_create( )
+    packet_decode(Packet *, const unsigned char *, unsigned)
+    packet_decode_pcap(Packet *, const uint8_t *, const struct pcap_pkthdr *)
+    packet_destroy(Packet *)
+    packet_dstaddr(Packet *packet)
+    packet_dstport(Packet *packet)
+    packet_frag_df(Packet *packet)
+    packet_frag_mf(Packet *packet)
+    packet_frag_offset(Packet *packet)
+    packet_has_alt_payload(Packet *packet)
+    packet_id(Packet *packet)
+    packet_is_fragment(Packet *packet)
+    packet_lib_version(void)
+    packet_mss(Packet *packet)
+    packet_payload(Packet *packet)
+    packet_paysize(Packet *packet)
+    packet_proto_count(Packet *packet)
+    packet_proto_data(Protocol *proto)
+    packet_proto_first(Packet *packet, unsigned *)
+    packet_proto_name(Protocol *proto)
+    packet_proto_next(Packet *packet, unsigned *)
+    packet_proto_proto(Protocol *proto)
+    packet_proto_size(Protocol *proto)
+    packet_protocol(Packet *packet)
+    packet_raw_payload(Packet *packet)
+    packet_raw_paysize(Packet *packet)
+    packet_seq(Packet *packet)
+    packet_set_datalink(unsigned datalink)
+    packet_set_payload(Packet *packet, void *payload, uint32_t paysize)
+    packet_srcaddr(Packet *packet)
+    packet_srcport(Packet *packet)
+    packet_stats(const struct packet_stats **ps)
+    packet_tcp_ack(Packet *packet)
+    packet_tcp_fin(Packet *packet)
+    packet_tcp_push(Packet *packet)
+    packet_tcp_rst(Packet *packet)
+    packet_tcp_syn(Packet *packet)
+    packet_tcp_urg(Packet *packet)
+    packet_tcpflags(Packet *packet)
+    packet_tos(Packet *packet)
+    packet_ttl(Packet *packet)
+    packet_version(Packet *packet)
+    packet_win(Packet *packet)
+    packet_winscale(Packet *packet)
+
+~~~~~~~~~~~

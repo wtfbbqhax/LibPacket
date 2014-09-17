@@ -1,0 +1,13 @@
+  _ _ _                      _        _   
+ | (_) |__  _ __   __ _  ___| | _____| |_ 
+ | | | '_ \| '_ \ / _` |/ __| |/ / _ \ __|
+ | | | |_) | |_) | (_| | (__|   <  __/ |_ 
+ |_|_|_.__/| .__/ \__,_|\___|_|\_\___|\__|
+           |_|                            
+
+Release: @VERSION@
+Bug Report: @PACKAGE_BUGREPORT@
+
+Libpacket is a simple library for preforming shallow packet inspection
+of the TCP/IP protocol stack. 
+
