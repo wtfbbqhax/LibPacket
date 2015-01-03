@@ -1,4 +1,4 @@
-SUBDIRS = include src
+SUBDIRS = include src extras	
 
 if HAVE_LIB_CHECK
 SUBDIRS += tests

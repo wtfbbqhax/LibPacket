@@ -56,6 +56,9 @@ struct _PacketLayer
 # define MAX_LAYERS 32
 #endif
 
+#warning "MAX_TCPOPTLEN value 32 is only a guessed value to fix compilation"
+#define MAX_TCPOPTLEN 32
+
 struct _Packet
 {
     unsigned version;
@@ -86,7 +89,7 @@ struct _Packet
     Protocol layer[MAX_LAYERS];
     Option tcp_option[MAX_TCPOPTLEN];
 };
-#define PKT_ZERO_LEN offsetof(Packet, layer_count)
+#define PKT_ZERO_LEN offsetof(Packet, tcpopt_count)
 
 int packet_layer_ins(Packet *packet, const uint8_t *start,
     unsigned size, PROTOCOL proto);

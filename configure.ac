@@ -1,9 +1,9 @@
-# Victor Roemer (sploit@evilsec.org)
+# Victor J. Roemer <vroemer@badsec.org>
 #
 # Process this file with autoconf to produce a configure script.
 
 AC_PREREQ(2.61)
-AC_INIT([libpacket], [0.0.1-alpha.1], [bugs@evilsec.org])
+AC_INIT([libpacket], [0.1.0-alpha.1], [vroemer@badsec.org])
 AC_CONFIG_SRCDIR([src/packet.c])
 AC_CONFIG_HEADERS([config.h])
 AC_CONFIG_MACRO_DIR([m4])
@@ -116,7 +116,7 @@ AC_CHECK_FUNCS([memset],, AC_ERROR([Missing function memset]))
 # 
 # Write the configuration files
 #
-AC_CONFIG_FILES([Makefile include/Makefile src/Makefile tests/Makefile])
+AC_CONFIG_FILES([Makefile include/Makefile src/Makefile extras/Makefile tests/Makefile])
 
 # 
 # Output the data
