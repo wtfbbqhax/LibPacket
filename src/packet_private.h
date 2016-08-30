@@ -56,8 +56,10 @@ struct _PacketLayer
 # define MAX_LAYERS 32
 #endif
 
-#warning "MAX_TCPOPTLEN value 32 is only a guessed value to fix compilation"
-#define MAX_TCPOPTLEN 32
+#ifndef MAX_TCPOPTLEN
+# warning "MAX_TCPOPTLEN value 40 is only a guessed value to fix compilation"
+# define MAX_TCPOPTLEN 40 
+#endif
 
 struct _Packet
 {
