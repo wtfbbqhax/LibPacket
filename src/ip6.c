@@ -27,14 +27,13 @@
  * OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE,
  * EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-#include <config.h>
 
 #include <stdio.h>
 #include <stdint.h>
 #include <string.h>
 #include <stdlib.h>
 
-#ifdef OPENBSD
+#ifdef __OpenBSD__
 # define IPPROTO_SCTP 132
 # include <netinet/in.h>
 # include <netinet/in_systm.h>

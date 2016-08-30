@@ -27,14 +27,13 @@
  * OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE,
  * EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-#include <config.h>
 
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
 
-#ifdef OPENBSD
+#ifdef __OpenBSD__
 #include <net/if.h>
 #include <net/if_arp.h>
 #else
@@ -43,7 +42,7 @@
 
 #include <netinet/if_ether.h>
 
-#ifdef LINUX
+#ifdef __linux__
 #include <netinet/ether.h>
 #endif
 

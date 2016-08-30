@@ -8,7 +8,7 @@ AC_CONFIG_SRCDIR([src/packet.c])
 AC_CONFIG_HEADERS([config.h])
 AC_CONFIG_MACRO_DIR([m4])
 
-AM_INIT_AUTOMAKE([-Wall -Werror foreign color-tests parallel-tests])
+#AM_INIT_AUTOMAKE([-Wall -Werror foreign color-tests parallel-tests])
 
 #
 # Checks for programs.
@@ -19,20 +19,9 @@ AC_PROG_INSTALL
 LT_INIT
 AC_PROG_LIBTOOL
 
-#
-# Setup for host specific needs 
-#
-case "$host" in
-#    *-darwin*)
-#    AC_DEFINE([MACOS], [1], [Define if MacOS])
-#    ;;
-    *-openbsd*)
-    AC_DEFINE([OPENBSD], [1], [Define if OpenBSD])
-    ;;
-#    *-linux*)
-#    AC_DEFINE([LINUX], [1], [Define if Linux])
-#    ;;
-esac
+append_cache_entry() {
+    CMakeCacheEntries="$CMakeCacheEntries -D $1:$2=$3"
+}
 
 ###############################################################################
 #                             Debug build option                              #
@@ -92,11 +81,11 @@ AC_CHECK_HEADERS([sys/socket.h],, AC_ERROR([Missing header sys/socket.h]))
 # fi
 # AM_CONDITIONAL([CHECK], [test "x$have_check" = "xyes"])
 
-AC_CHECK_HEADERS([check.h])
-AM_CONDITIONAL([HAVE_LIB_CHECK], [test "x$ac_cv_header_check_h" == "xyes"])
+#AC_CHECK_HEADERS([check.h])
+#AM_CONDITIONAL([HAVE_LIB_CHECK], [test "x$ac_cv_header_check_h" == "xyes"])
 
-AC_CHECK_HEADERS([pcap.h])
-AM_CONDITIONAL([HAVE_PCAP_H], [test "x$ac_cv_header_pcap_h" == "xyes"])
+#AC_CHECK_HEADERS([pcap.h])
+#AM_CONDITIONAL([HAVE_PCAP_H], [test "x$ac_cv_header_pcap_h" == "xyes"])
 
 #
 # Checks for typedefs, structures, and compiler characteristics.
@@ -116,9 +105,11 @@ AC_CHECK_FUNCS([memset],, AC_ERROR([Missing function memset]))
 # 
 # Write the configuration files
 #
-AC_CONFIG_FILES([Makefile include/Makefile src/Makefile extras/Makefile tests/Makefile])
+#AC_CONFIG_FILES([Makefile include/Makefile src/Makefile extras/Makefile tests/Makefile])
 
 # 
 # Output the data
 #
 AC_OUTPUT
+
+

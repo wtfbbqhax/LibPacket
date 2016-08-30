@@ -31,17 +31,13 @@
  *
  */
 
-#ifdef HAVE_CONFIG_H
-#include <config.h>
-#endif
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <ctype.h>
 #include <assert.h>
 
-#ifdef OPENBSD
+#ifdef __OpenBSD__
 # define IPPROTO_SCTP 132
 # include <netinet/in.h>
 # include <netinet/in_systm.h>

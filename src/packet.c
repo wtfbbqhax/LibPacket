@@ -27,9 +27,6 @@
  * OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE,
  * EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-#ifdef HAVE_CONFIG_H
-#include <config.h>
-#endif
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -149,7 +146,7 @@ packet_stats(const struct packet_stats **ps)
 /*
  * Packet Layer Accessors/Iterators
  */
-inline Protocol *packet_proto_first(Packet *packet, unsigned *iterator)
+Protocol *packet_proto_first(Packet *packet, unsigned *iterator)
 {
     *iterator = 0;
 
@@ -159,7 +156,7 @@ inline Protocol *packet_proto_first(Packet *packet, unsigned *iterator)
     return NULL;
 }
 
-inline Protocol *packet_proto_next(Packet *packet, unsigned *iterator)
+Protocol *packet_proto_next(Packet *packet, unsigned *iterator)
 {
     *iterator = *iterator + 1;
 
@@ -169,7 +166,7 @@ inline Protocol *packet_proto_next(Packet *packet, unsigned *iterator)
     return NULL;
 }
 
-inline Protocol *packet_proto_layer(Packet *packet, unsigned layer)
+Protocol *packet_proto_layer(Packet *packet, unsigned layer)
 {
     if (layer < packet->layer_count)
         return &packet->layer[layer];
@@ -177,22 +174,22 @@ inline Protocol *packet_proto_layer(Packet *packet, unsigned layer)
     return NULL;
 }
 
-inline unsigned packet_proto_count(Packet *packet)
+unsigned packet_proto_count(Packet *packet)
 {
     return packet->layer_count;
 }
 
-inline int packet_proto_size(Protocol *proto)
+int packet_proto_size(Protocol *proto)
 {
     return proto->size;
 }
 
-inline const uint8_t *packet_proto_data(Protocol *proto)
+const uint8_t *packet_proto_data(Protocol *proto)
 {
     return proto->start;
 }
 
-inline PROTOCOL packet_proto_proto(Protocol *proto)
+PROTOCOL packet_proto_proto(Protocol *proto)
 {
     return proto->protocol;
 }
@@ -223,80 +220,80 @@ static const char *proto_map[PROTO_MAX] = {
 #define ENUM2STR(num, map) \
     ((num < sizeof(map)/sizeof(map[0])) ? map[num] : "undefined")
 
-inline const char *packet_proto_name(Protocol *proto)
+const char *packet_proto_name(Protocol *proto)
 {
     return ENUM2STR(proto->protocol, proto_map);
 }
 
 /* IP Protocol Accessors */
-inline int packet_version(Packet *packet)
+int packet_version(Packet *packet)
 {
     return packet->version;
 }
 
-inline struct ipaddr packet_srcaddr(Packet *packet)
+struct ipaddr packet_srcaddr(Packet *packet)
 {
     return packet->srcaddr;
 }
 
-inline struct ipaddr packet_dstaddr(Packet *packet)
+struct ipaddr packet_dstaddr(Packet *packet)
 {
     return packet->dstaddr;
 }
 
-inline bool packet_is_fragment(Packet *packet)
+bool packet_is_fragment(Packet *packet)
 {
     return packet->offset || packet->mf;
 }
 
-inline bool packet_frag_mf(Packet *packet)
+bool packet_frag_mf(Packet *packet)
 {
     return packet->mf;
 }
 
-inline bool packet_frag_df(Packet *packet)
+bool packet_frag_df(Packet *packet)
 {
     return packet->df;
 }
 
-inline uint16_t packet_frag_offset(Packet *packet)
+uint16_t packet_frag_offset(Packet *packet)
 {
     return packet->offset;
 }
 
-inline uint8_t packet_protocol(Packet *packet)
+uint8_t packet_protocol(Packet *packet)
 {
     return packet->protocol;
 }
 
-inline uint32_t packet_id(Packet *packet)
+uint32_t packet_id(Packet *packet)
 {
     return packet->id;
 }
 
-inline uint8_t packet_ttl(Packet *packet)
+uint8_t packet_ttl(Packet *packet)
 {
     return packet->ttl;
 }
 
-inline uint8_t packet_tos(Packet *packet)
+uint8_t packet_tos(Packet *packet)
 {
     return packet->tos;
 }
 
 /* Transport Protocol Accessors */
-inline uint16_t packet_srcport(Packet *packet)
+uint16_t packet_srcport(Packet *packet)
 {
     return packet->srcport;
 }
 
-inline uint16_t packet_dstport(Packet *packet)
+uint16_t packet_dstport(Packet *packet)
 {
     return packet->dstport;
 }
 
 /* TCP Accessors */
-inline uint16_t packet_mss(Packet *packet)
+uint16_t packet_mss(Packet *packet)
 {
     if (!validate_transport_protocol(packet, PROTO_TCP))
         return 0;
@@ -305,7 +302,7 @@ inline uint16_t packet_mss(Packet *packet)
     return 0;
 }
 
-inline uint16_t packet_win(Packet *packet)
+uint16_t packet_win(Packet *packet)
 {
     if (!validate_transport_protocol(packet, PROTO_TCP))
         return 0;
@@ -313,7 +310,7 @@ inline uint16_t packet_win(Packet *packet)
     return ntohs(((struct tcphdr *)(packet->transport->start))->th_win);
 }
 
-inline uint16_t packet_winscale(Packet *packet)
+uint16_t packet_winscale(Packet *packet)
 {
     if (!validate_transport_protocol(packet, PROTO_TCP))
         return 0;
@@ -322,7 +319,7 @@ inline uint16_t packet_winscale(Packet *packet)
     return 0;
 }
 
-inline uint32_t packet_seq(Packet *packet)
+uint32_t packet_seq(Packet *packet)
 {
     if (!validate_transport_protocol(packet, PROTO_TCP))
         return 0;
@@ -330,7 +327,7 @@ inline uint32_t packet_seq(Packet *packet)
     return ntohl(((struct tcphdr *)(packet->transport->start))->th_seq);
 }
 
-inline uint32_t packet_ack(Packet *packet)
+uint32_t packet_ack(Packet *packet)
 {
     if (!validate_transport_protocol(packet, PROTO_TCP))
         return 0;
@@ -339,7 +336,7 @@ inline uint32_t packet_ack(Packet *packet)
 }
 
 /* TCP Flags Accessors */
-inline int packet_tcpflags(Packet *packet)
+int packet_tcpflags(Packet *packet)
 {
     if (!validate_transport_protocol(packet, PROTO_TCP))
         return 0;
@@ -347,7 +344,7 @@ inline int packet_tcpflags(Packet *packet)
     return ((struct tcphdr *)packet->transport->start)->th_flags;
 }
 
-inline bool packet_tcp_fin(Packet *packet)
+bool packet_tcp_fin(Packet *packet)
 {
     if (!validate_transport_protocol(packet, PROTO_TCP))
         return false;
@@ -355,7 +352,7 @@ inline bool packet_tcp_fin(Packet *packet)
     return ((struct tcphdr *)packet->transport->start)->th_flags & TH_FIN;
 }
 
-inline bool packet_tcp_syn(Packet *packet)
+bool packet_tcp_syn(Packet *packet)
 {
     if (!validate_transport_protocol(packet, PROTO_TCP))
         return false;
@@ -363,7 +360,7 @@ inline bool packet_tcp_syn(Packet *packet)
     return ((struct tcphdr *)packet->transport->start)->th_flags & TH_SYN;
 }
 
-inline bool packet_tcp_rst(Packet *packet)
+bool packet_tcp_rst(Packet *packet)
 {
     if (!validate_transport_protocol(packet, PROTO_TCP))
         return false;
@@ -371,7 +368,7 @@ inline bool packet_tcp_rst(Packet *packet)
     return ((struct tcphdr *)packet->transport->start)->th_flags & TH_RST;
 }
 
-inline bool packet_tcp_push(Packet *packet)
+bool packet_tcp_push(Packet *packet)
 {
     if (!validate_transport_protocol(packet, PROTO_TCP))
         return false;
@@ -379,7 +376,7 @@ inline bool packet_tcp_push(Packet *packet)
     return ((struct tcphdr *)packet->transport->start)->th_flags & TH_PUSH;
 }
 
-inline bool packet_tcp_ack(Packet *packet)
+bool packet_tcp_ack(Packet *packet)
 {
    if (!validate_transport_protocol(packet, PROTO_TCP))
         return false;
@@ -387,7 +384,7 @@ inline bool packet_tcp_ack(Packet *packet)
     return ((struct tcphdr *)packet->transport->start)->th_flags & TH_ACK;
 }
 
-inline bool packet_tcp_urg(Packet *packet)
+bool packet_tcp_urg(Packet *packet)
 {
    if (!validate_transport_protocol(packet, PROTO_TCP))
         return false;
@@ -395,8 +392,7 @@ inline bool packet_tcp_urg(Packet *packet)
     return ((struct tcphdr *)packet->transport->start)->th_flags & TH_URG;
 }
 
-inline void packet_set_payload(Packet *packet,
-    void *_payload, uint32_t paysize)
+void packet_set_payload(Packet *packet, void *_payload, uint32_t paysize)
 {
     uint8_t *payload = (uint8_t *)_payload;
     packet->alt_payload = payload;
@@ -404,7 +400,7 @@ inline void packet_set_payload(Packet *packet,
     return;
 }
 
-inline bool packet_has_alt_payload(Packet *packet)
+bool packet_has_alt_payload(Packet *packet)
 {
     /* should not be necessary to check both of these values */
     return (packet->alt_payload || packet->alt_paysize);
@@ -412,24 +408,24 @@ inline bool packet_has_alt_payload(Packet *packet)
 
 /* just return the raw values for this packet
  * this could provide a subtle performance increase if used correctly */
-inline uint32_t packet_raw_paysize(Packet *packet)
+uint32_t packet_raw_paysize(Packet *packet)
 {
     return packet->paysize;
 }
 
-inline const uint8_t *packet_raw_payload(Packet *packet)
+const uint8_t *packet_raw_payload(Packet *packet)
 {
     return packet->payload;
 }
 
 /* these functions will return the alternate payload if it exists
  * otherwise they return the raw payload */
-inline uint32_t packet_paysize(Packet *packet)
+uint32_t packet_paysize(Packet *packet)
 {
     return (packet->alt_paysize ?  packet->alt_paysize : packet->paysize);
 }
 
-inline const uint8_t *packet_payload(Packet *packet)
+const uint8_t *packet_payload(Packet *packet)
 {
     return (packet->alt_payload ?  packet->alt_payload : packet->payload);
 }

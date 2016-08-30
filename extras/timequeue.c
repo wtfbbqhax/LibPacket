@@ -36,10 +36,6 @@
 
 #include <pthread.h>
 
-#ifdef HAVE_CONFIG
-#include <config.h>
-#endif
-
 #include "timequeue.h"
 
 #define UNUSED __attribute__((unused))

@@ -30,7 +30,6 @@
 /* XXX
  * 6/28/12 - IPX support needs substantial work done to make it robust.
  */ 
-#include <config.h>
 
 #include <stdint.h>
 
