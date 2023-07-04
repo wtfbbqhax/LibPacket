@@ -102,7 +102,7 @@ decode_ipx(Packet *p, const uint8_t * pkt, const uint32_t len)
     if (ipx->ipx_cks != 0xffff)
     {
         s_stats.ipxs_badsum++;
-        return -1;
+        //return -1;
     }
 
     /* processing ends here for now, need to implement:

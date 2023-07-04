@@ -50,6 +50,7 @@
 #include "tcp.h"
 #include "udp.h"
 #include "sctp.h"
+#include "icmp6.h"
 
 extern struct packet_stats s_stats;
 
@@ -82,7 +83,7 @@ bind_ip6(const uint8_t *pkt, const uint32_t len, Packet *p)
             ret = decode_ip6_ext(pkt, len, p);
             break;
         case IPPROTO_ICMPV6:
-            ret = decode_icmp4(pkt, len, p);
+            ret = decode_icmp6(pkt, len, p);
             break;
         case IPPROTO_TCP:
             ret = decode_tcp(pkt, len, p);

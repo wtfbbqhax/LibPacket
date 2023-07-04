@@ -105,11 +105,10 @@ decode_sctp(const uint8_t *pkt, const uint32_t len, Packet *p)
     uint32_t cks = ntohl(sctp->sum);
     sctp->sum = 0;
 
-    if (crc32c(sctp, len) != cks)
-    {
-        s_stats.sctps_badsum++;
-        return -1;
-    }
+    //if (crc32c(sctp, len) != cks)
+    //{
+    //    s_stats.sctps_badsum++;
+    //}
 
     return 0;
 }

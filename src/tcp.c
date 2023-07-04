@@ -45,12 +45,14 @@
 
 extern struct packet_stats s_stats;
 
-/* Table that maps ordinal (option type) to option length. 
+/* Table that maps ordinal (option type) to option length.
  * Refer to link for more information.
  * http://www.iana.org/assignments/tcp-parameters/tcp-parameters.xml
  *
  * Note that we only bother ourselves with the first 8 option types.
  * In the future, I may build a full table 0-254.
+ *
+ * NOTE: See below, I only really care about Window Scale and MSS.
  *
  *  0 - No length (EOL, NOP)
  * >0 - Fixed length
@@ -61,12 +63,13 @@ static const int8_t tcpopt_len_tbl[] =
      0, 0, 4, 3, 2, -1, 6, 6, 10
 };
 
+
 #define TCPOPT_MAX (sizeof(tcpopt_len_tbl)/sizeof(tcpopt_len_tbl[0]))
 
 /* Some sort of state machine for parsing tcp options. */
 /* This was allot harder than it should have been. */
-static inline void 
-decode_tcp_options(Packet *p, const uint8_t *start, const unsigned len)
+static inline void
+_decode_tcp_options(Packet *p, const uint8_t *start, const unsigned len)
 {
     if (len > MAX_TCPOPTLEN)
         return;
@@ -135,6 +138,37 @@ nxt_tcp_opt:
     return;
 }
 
+#ifndef TCPOPT_MAXSEG
+#define TCPOPT_MAXSEG	2
+#endif
+
+#ifndef TCPOPT_MAXSEG
+#define TCPOPT_WINDOW	3
+#endif
+
+static inline void
+decode_tcp_options(Packet *p, const uint8_t *start, const unsigned len)
+{
+    // Let the state machine build and populate the TCP options table.
+    _decode_tcp_options(p, start, len);
+
+    // Post-processing and assignment to the Packet struct.
+    for (size_t i = 0; i < p->tcpopt_count; i++)
+    {
+        Option *op = &p->tcp_option[i];
+        switch (op->type)
+        {
+            case TCPOPT_WINDOW:
+            p->wscale = *(uint32_t*)op->value;
+            break;
+
+            case TCPOPT_MAXSEG:
+            p->mss = *(uint16_t*)op->value;
+            break;
+        }
+    }
+}
+
 int
 decode_tcp(const uint8_t *pkt, const uint32_t len, Packet *p)
 {
@@ -184,7 +218,6 @@ decode_tcp(const uint8_t *pkt, const uint32_t len, Packet *p)
     if (checksum((uint16_t *)tcp, &pseudo, ntohs(pseudo.len)) != 0)
     {
         s_stats.tcps_badsum++;
-        return -1;
     }
 
     return 0;

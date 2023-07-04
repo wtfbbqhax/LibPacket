@@ -77,7 +77,6 @@ decode_icmp4(const uint8_t *pkt, const uint32_t len, Packet *p)
     if (checksum((uint16_t *)icmp, &pseudo, ntohs(pseudo.len)) != 0)
     {
         s_stats.icmps_badsum++;
-        //return -1;
     }
 
     return 0;
