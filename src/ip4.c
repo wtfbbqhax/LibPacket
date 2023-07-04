@@ -117,6 +117,10 @@ decode_ip(const uint8_t * pkt, const uint32_t len, Packet *p)
     p->payload += hlen;
     p->paysize = pay_len;
 
+    // FIXME-L Count the number of trailing bytes `(len - (pay_len + hlen))`.
+    // While rare, it is possible to capture the Ethernet FCS.
+    // trailing_bytes = (len - (pay_len - hlen));
+
     p->id = ip->ip_id;
     p->tos = ip->ip_tos;
     p->ttl = ip->ip_ttl;
@@ -129,7 +133,6 @@ decode_ip(const uint8_t * pkt, const uint32_t len, Packet *p)
     if (checksum((uint16_t *)ip, NULL, hlen) != 0)
     {
         s_stats.ips_badsum++;
-        return -1;
     }
 
     if (p->offset || p->mf)
