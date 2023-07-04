@@ -39,7 +39,9 @@
 # include <netinet/in_systm.h>
 #endif
 
-#define __FAVOR_BSD
+#ifndef __USE_MISC
+#define __USE_MISC
+#endif
 #include <arpa/inet.h>
 #include <netinet/ip.h>
 
@@ -50,6 +52,7 @@
 #include "ip6.h"
 #include "tcp.h"
 #include "udp.h"
+#include "icmp4.h"
 #include "sctp.h"
 
 extern struct packet_stats s_stats;
@@ -66,6 +69,9 @@ bind_ip(const uint8_t * pkt, const uint32_t len, Packet *p)
             break;
         case IPPROTO_UDP:
             ret = decode_udp(pkt, len, p);
+            break;
+        case IPPROTO_ICMP:
+            ret = decode_icmp4(pkt, len, p);
             break;
         case IPPROTO_SCTP:
             ret = decode_sctp(pkt, len, p);

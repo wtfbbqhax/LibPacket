@@ -36,7 +36,9 @@
 #include <pcap.h>
 #endif
 
-#define __FAVOR_BSD
+#ifndef __USE_MISC
+#define __USE_MISC
+#endif
 #include <netinet/tcp.h>
 
 #include "packet_private.h"
@@ -63,6 +65,12 @@ packet_create()
 
     memset(packet, 0, PKT_ZERO_LEN);
     return packet;
+}
+
+void
+packet_clear(Packet* packet)
+{
+    memset(packet, 0, PKT_ZERO_LEN);
 }
 
 void
@@ -128,6 +136,8 @@ packet_decode_pcap(Packet *packet, const uint8_t *pkt,
 /*
  * Library routines
  */
+
+#include <packet/libpacket.h>
 static const char packet_version_string[] =
     PACKAGE " version " PACKAGE_VERSION;
 
@@ -288,6 +298,16 @@ uint16_t packet_srcport(Packet *packet)
 }
 
 uint16_t packet_dstport(Packet *packet)
+{
+    return packet->dstport;
+}
+
+uint8_t packet_icmp_type(Packet *packet)
+{
+    return packet->srcport;
+}
+
+uint8_t packet_icmp_code(Packet *packet)
 {
     return packet->dstport;
 }

@@ -31,7 +31,9 @@
 #include <stdint.h>
 #include <inttypes.h>
 
-#define __FAVOR_BSD
+#ifndef __USE_MISC
+#define __USE_MISC
+#endif
 #include <netinet/in.h>
 #include <netinet/tcp.h>
 

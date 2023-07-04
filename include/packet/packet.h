@@ -30,19 +30,66 @@
 #ifndef PACKET_H
 #define PACKET_H
 
-/*
- * Requires C99 types
- */
 #include <stdint.h>
 #include <stdbool.h>
 #include <sys/types.h>
 #include <sys/time.h>
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 #include <packet/ipaddr.h>
 #include <packet/protocol.h>
 #include <packet/options.h>
 #include <packet/stats.h>
 
+struct _PacketLayer
+{
+    PROTOCOL protocol;
+    unsigned size;
+    const uint8_t *start;
+};
+
+#ifndef MAX_LAYERS
+# define MAX_LAYERS 32
+#endif
+
+#ifndef MAX_TCPOPTLEN
+//# warning "MAX_TCPOPTLEN value 40 is only a guessed value to fix compilation"
+# define MAX_TCPOPTLEN 40
+#endif
+
+struct _Packet
+{
+    unsigned version;
+    struct ipaddr srcaddr;
+    struct ipaddr dstaddr;
+    uint16_t srcport;
+    uint16_t dstport;
+    uint8_t protocol;
+    bool mf, df;
+    uint16_t offset;
+    uint32_t id;
+    uint8_t ttl;
+    uint8_t tos;
+    uint16_t mss;
+    uint8_t wscale;
+    unsigned paysize;
+    const uint8_t *payload;
+
+    /* Alt payload is set outside of libpacket */
+    unsigned alt_paysize;
+    uint8_t *alt_payload;
+
+    Protocol *transport;
+    unsigned layer_count;
+    unsigned tcpopt_count;
+
+    /* Start of some static lists */
+    Protocol layer[MAX_LAYERS];
+    Option tcp_option[MAX_TCPOPTLEN];
+};
 typedef struct _Packet Packet;
 
 struct pcap_pkthdr;
@@ -52,6 +99,8 @@ struct pcap_pkthdr;
 Packet *packet_create( );
 
 void packet_destroy(Packet *);
+
+void packet_clear(Packet* packet);
 
 int packet_set_datalink(unsigned datalink);
 
@@ -111,6 +160,10 @@ uint16_t packet_srcport(Packet *packet);
 
 uint16_t packet_dstport(Packet *packet);
 
+uint8_t packet_icmp_code(Packet *packet);
+
+uint8_t packet_icmp_type(Packet *packet);
+
 uint16_t packet_mss(Packet *packet);
 
 uint16_t packet_win(Packet *packet);
@@ -147,5 +200,9 @@ const uint8_t *packet_raw_payload(Packet *packet);
 uint32_t packet_paysize(Packet *packet);
 
 const uint8_t *packet_payload(Packet *packet);
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 #endif /* PACKET_H */
