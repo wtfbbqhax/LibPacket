@@ -81,6 +81,9 @@ bind_ip6(const uint8_t *pkt, const uint32_t len, Packet *p)
         case IPPROTO_HOPOPTS:
             ret = decode_ip6_ext(pkt, len, p);
             break;
+        case IPPROTO_ICMPV6:
+            ret = decode_icmp4(pkt, len, p);
+            break;
         case IPPROTO_TCP:
             ret = decode_tcp(pkt, len, p);
             break;
@@ -93,6 +96,14 @@ bind_ip6(const uint8_t *pkt, const uint32_t len, Packet *p)
         case IPPROTO_IPIP:
             ret = decode_ip(pkt, len, p);
             break;
+        case IPPROTO_IPV6:
+            ret = decode_ip6(pkt, len, p);
+            break;
+        // NOTE: We should take a hard stance and drop all
+        //       technically anomolous packets
+        //case IPPROTO_ICMP:
+        //    ret = decode_icmp4(pkt, len, p);
+        //    break;
     }
 
     return ret;
@@ -196,7 +207,7 @@ decode_ip6_ext(const uint8_t *pkt, const uint32_t len, Packet *p)
  *
  */
 int
-decode_ip6 (const uint8_t *pkt, const uint32_t len, Packet *p)
+decode_ip6(const uint8_t *pkt, const uint32_t len, Packet *p)
 {
     struct ip6_hdr *ip6 = (struct ip6_hdr *) pkt;
 

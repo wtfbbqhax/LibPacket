@@ -5,15 +5,15 @@
              |_|_|_.__/| .__/ \__,_|\___|_|\_\___|\__|
                        |_|
 
-Release: @VERSION@
-Bug Report: @PACKAGE_BUGREPORT@
+Release: 0.1.0
+Bug Report: vroemer@badsec.org
 
 TCP/IP packet decoder/parser that provides a clean API to aide in the
 creation of packet sniffers.
 
 
-======================================================================
 Platforms
+---------
 
 
 Expected to work on the following OSs:
@@ -26,8 +26,8 @@ Expected to work on the following OSs:
  work on a different platform; please submit an issue.
 
 
-======================================================================
 Protocol Support
+----------------
 
 LibPacket supports decoding the following protocol headers:
  - Ethernet
@@ -40,14 +40,25 @@ LibPacket supports decoding the following protocol headers:
  - TCP
  - UDP
  - SCTP
+ - ICMP
+ - ICMPv6
 
 Experimental support is provided for the following protocol headers:
  - IPX
  - SPX
 
 
-======================================================================
+Build and Install
+-----------------
+
+```sh
+cmake -B build -G Ninja .
+cmake --build build
+sudo cmake --install build
+```
+
 Getting Started
+---------------
 
 
 Refer to the header files:
@@ -59,7 +70,7 @@ Refer to the header files:
 
 The primary interface is documented below:
 
-# Packet type
+## Packet type
 
 |    Packet*         packet_create( );
 |    void            packet_destroy(Packet *);
@@ -71,8 +82,7 @@ Allocates and destroy a packet instance respectively.
 
 Decode's "raw_data" and writes results into "packet".
 
-
-# Protocol Layers
+## Protocol Layers
 
 |    Protocol*       packet_proto_first(Packet *packet, unsigned *);
 |    Protocol*       packet_proto_next(Packet *packet, unsigned *);
@@ -84,7 +94,7 @@ Decode's "raw_data" and writes results into "packet".
 |    const char*     packet_proto_name(Protocol *proto);
 
 
-# IPv4 and IPv6 Protocols
+## IPv4 and IPv6 Protocols
 
 |    int            packet_version(Packet *packet)
 |
@@ -102,13 +112,13 @@ Decode's "raw_data" and writes results into "packet".
 |    uint16_t       packet_frag_offset(Packet *packet)
 
 
-# TCP, UDP and SCTP Protocols
+## TCP, UDP and SCTP Protocols
 
 |    uint16_t       packet_srcport(Packet *packet)
 |    uint16_t       packet_dstport(Packet *packet)
 
 
-# TCP Protocol
+## TCP Protocol
 
 |    uint32_t       packet_seq(Packet *packet)      // Sequence #
 |    uint32_t       packet_ack(Packet *packet)      // Acknowledgement #
@@ -148,7 +158,4 @@ The "raw" payload is returned always.
 |    const uint8_t*  packet_payload(Packet *packet);
 
 Returns the "alt" payload if set; the "raw" payload otherwise.
-
-
-
 

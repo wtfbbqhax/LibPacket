@@ -31,10 +31,15 @@
 /*
  * IPv4/IPv6 Address Encapsulation
  */
-#include <stdint.h>
-#include <netinet/in.h>
 #ifndef PACKET_IPADDR_H
 #define PACKET_IPADDR_H
+
+#include <stdint.h>
+#include <netinet/in.h>
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 struct ipaddr {
     union {
@@ -96,35 +101,7 @@ ip_compare(struct ipaddr *ip_1, struct ipaddr *ip_2)
     return IP_EQUAL;
 }
 
-#if 0
-/* XXX TODO, polish into a robust ip address abstraction api */
-#include <arpa/inet.h>
-
-#define IPADDR_STRLEN INET6_ADDRSTRLEN
-
-const char *ip_ntop(const struct ipaddr *src, char *dst, int size)
-{
-    if (size < IPADDR_STRLEN)
-        return NULL;
-
-    return inet_ntop(src->family, src, dst, size);
-}
-
-const ip_pton
-inet_pton
-
-/* 
- * Check if an ip address is private
- */
-static inline ip_is_private(struct ipaddr *ip)
-{
-    /* check for ipv6 */
-    if (ip->addr32[1] == 0 &&
-        ip->addr32[2] == 0 &&
-        ip->addr32[3] == 0)
-    {
-    }
-}
+#ifdef __cplusplus
+};
 #endif
-
 #endif /* PACKET_IPADDR_H */

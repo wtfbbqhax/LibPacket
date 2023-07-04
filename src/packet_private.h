@@ -40,11 +40,15 @@
 #include <sys/time.h>
 #include <stddef.h>
 
+#ifndef __USE_MISC
+#define __USE_MISC
+#endif
 #include <netinet/tcp.h>
 
 #include "packet.h"
 #include "checksum.h"
 
+#if 0
 struct _PacketLayer
 {
     PROTOCOL protocol;
@@ -57,7 +61,7 @@ struct _PacketLayer
 #endif
 
 #ifndef MAX_TCPOPTLEN
-# warning "MAX_TCPOPTLEN value 40 is only a guessed value to fix compilation"
+//# warning "MAX_TCPOPTLEN value 40 is only a guessed value to fix compilation"
 # define MAX_TCPOPTLEN 40 
 #endif
 
@@ -91,6 +95,8 @@ struct _Packet
     Protocol layer[MAX_LAYERS];
     Option tcp_option[MAX_TCPOPTLEN];
 };
+#endif
+
 #define PKT_ZERO_LEN offsetof(Packet, tcpopt_count)
 
 int packet_layer_ins(Packet *packet, const uint8_t *start,
