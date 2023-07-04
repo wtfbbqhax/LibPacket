@@ -5,8 +5,8 @@
              |_|_|_.__/| .__/ \__,_|\___|_|\_\___|\__|
                        |_|
 
-Release: 0.1.0
-Bug Report: vroemer@badsec.org
+Release: 0.2.0
+Bug Report: github.com/wtfbbqhax/LibPacket/issues
 
 TCP/IP packet decoder/parser that provides a clean API to aide in the
 creation of packet sniffers.
