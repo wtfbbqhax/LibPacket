@@ -31,6 +31,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <assert.h>
 
 #ifdef HAVE_PCAP_H
 #include <pcap.h>
@@ -79,8 +80,10 @@ packet_destroy(Packet *packet)
     if (packet == NULL)
         return;
 
-    if (packet->alt_payload)
-        free(packet->alt_payload);
+    // FIXME-H: When the user attaches alt_payload, as in the case of
+    // `extra/defragment.c` also attach a "destroy callback".
+    // If a destroy callback is set, call it here to release the alternate payload.
+    if (packet->alt_payload != NULL) abort();
 
     free(packet);
 }

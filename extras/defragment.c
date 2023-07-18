@@ -1105,6 +1105,7 @@ defragment(Packet *p)
 
         tmq_delete(timeout_queue, tmq_elem);
 
+#warn "packet_destroy will not free the alternate payload"
         packet_set_payload(p, payload, paysize);
 
         frag_table_remove(&key, list);
