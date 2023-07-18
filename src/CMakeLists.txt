@@ -1,11 +1,15 @@
-cmake_minimum_required (VERSION 3.8)
-project (libpacket C CXX)
-
 set(CMAKE_C_STANDARD 11)
 
 add_library(
     packet
-    MODULE
+    SHARED
+)
+
+set_target_properties(
+    packet
+    PROPERTIES
+    VERSION 0.2.1
+    SOVERSION 0
 )
 
 target_sources(
@@ -52,10 +56,9 @@ target_include_directories(
     BEFORE
     PRIVATE "${CMAKE_SOURCE_DIR}/include"
     PRIVATE "${CMAKE_SOURCE_DIR}"
-) 
+)
 
 install(
     TARGETS packet
-    LIBRARY DESTINATION "/usr/local/lib"
+    LIBRARY DESTINATION "${CMAKE_INSTALL_PREFIX}/lib"
 )
-
