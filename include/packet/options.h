@@ -27,11 +27,19 @@
 #ifndef PACKET_OPTIONS_H
 #define PACKET_OPTIONS_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 typedef struct Option
 {
     uint8_t type;
     uint8_t len;
     const uint8_t *value;
 } Option;
+
+#ifdef __cplusplus
+};
+#endif
 
 #endif /* PACKET_OPTIONS_H */

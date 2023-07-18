@@ -34,6 +34,10 @@
 #ifndef PACKET_PROTOCOL_H
 #define PACKET_PROTOCOL_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 typedef struct _PacketLayer Protocol;
 
 typedef enum
@@ -58,5 +62,9 @@ typedef enum
     PROTO_ICMP6,
     PROTO_MAX
 } PROTOCOL;
+
+#ifdef __cplusplus
+};
+#endif
 
 #endif /* PACKET_PROTOCOL_H */

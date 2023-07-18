@@ -104,4 +104,5 @@ ip_compare(struct ipaddr *ip_1, struct ipaddr *ip_2)
 #ifdef __cplusplus
 };
 #endif
+
 #endif /* PACKET_IPADDR_H */

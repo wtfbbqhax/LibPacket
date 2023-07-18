@@ -35,14 +35,14 @@
 #include <sys/types.h>
 #include <sys/time.h>
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 #include <packet/ipaddr.h>
 #include <packet/protocol.h>
 #include <packet/options.h>
 #include <packet/stats.h>
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 struct _PacketLayer
 {
@@ -202,7 +202,7 @@ uint32_t packet_paysize(Packet *packet);
 const uint8_t *packet_payload(Packet *packet);
 
 #ifdef __cplusplus
-extern "C" {
+};
 #endif
 
 #endif /* PACKET_H */

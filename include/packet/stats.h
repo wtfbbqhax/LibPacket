@@ -31,6 +31,10 @@
 #ifndef PACKET_STATS_H
 #define PACKET_STATS_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /* Protocol decoding stats
  */
 struct packet_stats {
@@ -98,5 +102,9 @@ struct packet_stats {
     uint32_t sctps_badtype;     /* bad chunk type */ // XXX UNUSED 
     uint32_t sctps_tooshort;    /* not enough data */
 };
+
+#ifdef __cplusplus
+};
+#endif
 
 #endif /* PACKET_STATS_H */
