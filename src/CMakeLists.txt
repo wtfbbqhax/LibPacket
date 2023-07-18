@@ -8,7 +8,7 @@ add_library(
 set_target_properties(
     packet
     PROPERTIES
-    VERSION 0.2.1
+    VERSION 0.2.2
     SOVERSION 0
 )
 
