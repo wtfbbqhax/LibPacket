@@ -31,3 +31,5 @@ autoscan.log
 configure.scan
 packet-config
 tags
+tests/build
+tests/Testing
