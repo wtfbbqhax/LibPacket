@@ -101,6 +101,8 @@ struct packet_stats {
     uint32_t sctps_badsum;      /* checksum errors */
     uint32_t sctps_badtype;     /* bad chunk type */ // XXX UNUSED 
     uint32_t sctps_tooshort;    /* not enough data */
+
+    uint32_t geneve_packets;    /* total geneve packets */
 };
 
 #ifdef __cplusplus

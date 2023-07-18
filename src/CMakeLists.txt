@@ -20,6 +20,12 @@ target_sources(
     crc32.h
     eth.c
     eth.h
+    geneve.c
+    geneve.h
+    icmp4.c
+    icmp4.h
+    icmp6.c
+    icmp6.h
     ip4.c
     ip4.h
     ip6.c
@@ -45,10 +51,6 @@ target_sources(
     tcp.h
     udp.c
     udp.h
-    icmp4.c
-    icmp4.h
-    icmp6.c
-    icmp6.h
     vlan.c
     vlan.h
 )

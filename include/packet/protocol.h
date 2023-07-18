@@ -60,6 +60,7 @@ typedef enum
     PROTO_SCTP,
     PROTO_ICMP,
     PROTO_ICMP6,
+    PROTO_GENEVE,
     PROTO_MAX
 } PROTOCOL;
 
