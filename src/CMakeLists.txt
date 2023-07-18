@@ -47,6 +47,8 @@ target_sources(
     udp.h
     icmp4.c
     icmp4.h
+    icmp6.c
+    icmp6.h
     vlan.c
     vlan.h
 )
