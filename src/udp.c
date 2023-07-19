@@ -37,9 +37,9 @@
 #define __FAVOR_BSD
 #include <netinet/udp.h>
 
-#include "packet_private.h"
-
 #include "checksum.h"
+#include "packet_private.h"
+#include "geneve.h"
 
 extern struct packet_stats s_stats;
 
@@ -78,16 +78,17 @@ decode_udp(const uint8_t *pkt, const uint32_t len, Packet *p)
     if (udp->uh_sum == 0 && p->version == 6)
     {
         s_stats.udps_badsum++;
-        //return -1;
-    }
-    else if (udp->uh_sum == 0)
-    {
-        return 0;
     }
 
-    if (checksum((uint16_t *)udp, &pseudo, ntohs(pseudo.len)) != 0)
+    if (udp->uh_sum != 0)
     {
-        s_stats.udps_badsum++;
+        if (checksum((uint16_t *)udp, &pseudo, ntohs(pseudo.len)) != 0)
+            s_stats.udps_badsum++;
+    }
+
+    if (p->dstport == 6081)
+    {
+        return decode_geneve(pkt + sizeof(*udp), len - sizeof(*udp), p);
     }
 
     return 0;

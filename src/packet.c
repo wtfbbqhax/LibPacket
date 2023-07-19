@@ -227,7 +227,8 @@ static const char *proto_map[PROTO_MAX] = {
     "udp",
     "sctp",
     "icmp",
-    "icmp6"
+    "icmp6",
+    "geneve"
 };
 
 #define ENUM2STR(num, map) \

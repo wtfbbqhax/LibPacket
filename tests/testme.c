@@ -7,6 +7,8 @@
 
 int s_error = 0;
 
+extern void print_packet(const uint8_t *data, const size_t len);
+
 #define PERLINE 10
 void print_cbuf(const uint8_t *data, int length)
 {
@@ -26,6 +28,8 @@ void print_cbuf(const uint8_t *data, int length)
     }
 }
 
+
+
 static void
 packet_callback(uint8_t *unused, const struct pcap_pkthdr *ph,
     const uint8_t *pkt)
@@ -33,7 +37,7 @@ packet_callback(uint8_t *unused, const struct pcap_pkthdr *ph,
     static int count = 0;
     count++;
 
-    Packet *packet = packet_create( );
+    //Packet *packet = packet_create( );
 
     /* cute way of collecting packet data for unit tests */
 #if 0
@@ -42,12 +46,14 @@ packet_callback(uint8_t *unused, const struct pcap_pkthdr *ph,
     printf("};\n");
 #endif
 
-    int error = packet_decode(packet, pkt, ph->caplen);
+    print_packet(pkt, ph->caplen);
+    //int error = packet_decode(packet, pkt, ph->caplen);
 
-    if (error)
-    {
-        s_error = error;
-    }
+    //if (error)
+    //{
+    //    s_error = error;
+    //}
+    
     
     /* not cute */
 #if 0
@@ -63,7 +69,7 @@ packet_callback(uint8_t *unused, const struct pcap_pkthdr *ph,
     printf("\n");
 #endif
 
-    packet_destroy(packet);
+    //packet_destroy(packet);
 }
 
 int main(int argc, char *argv[])
@@ -96,6 +102,7 @@ int main(int argc, char *argv[])
     printf("Processed %u packets\n", ps->total_packets);
     printf("Rejected %u packets\n", ps->total_errors);
 
+    printf("Analyzed %u geneve packets\n", ps->geneve_packets);
     printf("Analyzed %u pppoe packets\n", ps->pppoes_packets);
     printf("Analyzed %u ppp packets\n", ps->ppps_packets);
     printf("Analyzed %u ip packets\n", ps->ips_packets);
