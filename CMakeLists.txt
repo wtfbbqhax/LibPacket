@@ -1,5 +1,5 @@
-cmake_minimum_required(VERSION 3.0)
-project(libpacket C)
+cmake_minimum_required(VERSION 3.20)
+project(libpacket C CXX)
 add_subdirectory(src)
 
 # Install library headers
