@@ -1,5 +1,5 @@
-// 
-// libpacket/src/dns.c: DNS protocol decoder 
+//
+// libpacket/src/dns.c: DNS protocol decoder
 // Victor Roemer (wtfbbqhax), <victor@badsec.org>.
 //
 #include <assert.h>
@@ -9,6 +9,9 @@
 #include <ctype.h> // dns_print_data
 
 #include <arpa/inet.h>
+
+#include <iostream>
+#include <string>
 
 #include "packet_private.h"
 #include "packet/dns.h"
@@ -27,7 +30,7 @@ decode_dns(uint8_t const * pkt, uint32_t const len, dns* dns)
     }
 
     struct dns_header const* raw =
-	    (struct dns_header const*)pkt;
+            (struct dns_header const*)pkt;
 
     dns->h.id = ntohs(raw->id);
     dns->h.flags = ntohs(raw->flags);
@@ -48,8 +51,8 @@ decode_dns(uint8_t const * pkt, uint32_t const len, dns* dns)
     // Parsing Question Section
     for (int i = 0; i < dns->h.qdcount; i++)
     {
-        struct dns_query *q = &dns->questions[i];
-        
+        struct dns_query* q = &dns->questions[i];
+
         // Parse QNAME
         while (remaining_len > 0 && *ptr != 0)
         {
@@ -63,10 +66,13 @@ decode_dns(uint8_t const * pkt, uint32_t const len, dns* dns)
                 return -1;
             }
 
+            q->label.append(reinterpret_cast<char const*>(ptr), label_len);
+            q->label.append(".");
+
             ptr += label_len;
             remaining_len -= label_len;
         }
-        
+
         // Null byte at the end of QNAME
         if (remaining_len == 0)
         {
@@ -152,8 +158,35 @@ decode_dns(uint8_t const * pkt, uint32_t const len, dns* dns)
         a->dns_atype = atype;
         a->dns_aclass = aclass;
         a->dns_ttl = ttl;
-        a->dns_rdlength = rdlength;
-        a->dns_rdata = *((uint16_t*)rdata);
+
+        // Parse rdata
+        while (rdata < ptr)
+        {
+            uint16_t us = *reinterpret_cast<uint16_t const*>(rdata);
+            if (us == name)
+            {
+                rdata += 2;
+                rdlength -= 2;
+                continue;
+            }
+
+            uint8_t len = 0;
+            if (rdlength >= 1)
+            {
+                len = *rdata;
+                rdata += 1;
+            }
+            // abort if len == 0 && rdatalength > 0 // ANOMALY?
+
+            len = rdlength > len ? len : rdlength;
+
+            if (len)
+            {
+                a->data.append(reinterpret_cast<char const*>(rdata), len);
+                a->data.append(".");
+            }
+            rdata += len;
+        }
     }
 
     return 0;
