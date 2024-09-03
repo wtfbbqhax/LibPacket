@@ -36,9 +36,9 @@ int print_dns(dns const& dns)
 {
     bool is_response = DNS_QR(dns.h.flags);
 
-    if (is_response)
+    //if (is_response)
     {
-            printf("[dns response] [rcode:%d, id:%d, qdcount: %d, ancount: %d, nscount: %d, arcount:%d]\n",
+        printf("[dns] [rcode:%d, id:%d, qdcount: %d, ancount: %d, nscount: %d, arcount:%d]\n",
             DNS_RCODE(dns.h.flags),
             dns.h.id,
             dns.h.qdcount,
@@ -46,12 +46,12 @@ int print_dns(dns const& dns)
             dns.h.nscount,
             dns.h.arcount);
     }
-    else
-    {
-            printf("[dns query] [id:%d, qdcount: %d]\n",
-            dns.h.id,
-            dns.h.qdcount);
-    }
+    //else
+    //{
+    //    printf("[dns query] [id:%d, qdcount: %d]\n",
+    //        dns.h.id,
+    //        dns.h.qdcount);
+    //}
 
     // Parsing Question Section
     for (int i = 0; i < dns.h.qdcount; i++)
@@ -78,7 +78,11 @@ int print_dns(dns const& dns)
         {
             inet_ntop(AF_INET, a.data.data(), addr, sizeof(addr));
             human.append(addr, strnlen(addr, INET6_ADDRSTRLEN));
-
+        }
+        else if (a.dns_atype == 28)
+        {
+            inet_ntop(AF_INET6, a.data.data(), addr, sizeof(addr));
+            human.append(addr, strnlen(addr, INET6_ADDRSTRLEN));
         }
         else
         {
@@ -95,6 +99,7 @@ int print_dns(dns const& dns)
     //    (void)dns[0].questions[i].dns_qclass;
     }
  
+    printf("\n");
     return 0;
 }
 
@@ -179,21 +184,17 @@ print_packet(int const instance_id, DAQ_PktHdr_t const* hdr, uint8_t const * dat
                 packet_frag_mf(&packet) ? "mf" : "");
     }
 
+    uint32_t max = packet_paysize(&packet);
+    const uint8_t *payload = packet_payload(&packet);
     if (sport == 53 || dport == 53)
     {
         dns _dns;
-        decode_dns(packet_payload(&packet),
-                packet_paysize(&packet),
-                &_dns);
+        decode_dns(payload, max, &_dns);
         print_dns(_dns);
     }
 
-    uint32_t max = packet_paysize(&packet);
-    const uint8_t *payload = packet_payload(&packet);
     max = max > 128 ? 128 : max;
-    print_data(payload, max);
-
-    //print_data(data, len);
+    //print_data(payload, max);
 
 #ifdef PRINT_PACKET_STATS
     // Packet stats are useful for determining decoding errors

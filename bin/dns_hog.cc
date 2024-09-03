@@ -21,9 +21,7 @@
 #include <packet/dns.h>
 #include <pcap.h>
 
-//#include <sfbpf.h>
-//#include <sfbpf_dlt.h>
-
+#define TXT_FG_PURPLE(str)   "\e[35m" str "\e[0m"
 
 #include "daq_print.h"
 
@@ -441,7 +439,8 @@ private:
                 }
 
                 verdicts.verdicts[i] = verdict;
-                printf(matched ? "[match|%s] " : "[%s]", str_from_verdict(verdict));
+                printf(matched ? "[" TXT_FG_PURPLE("match") "] " : "");
+		printf("[%s] ", str_from_verdict(verdict));
                 print_packet(id, hdr, data, hdr->pktlen);
             }
         }
@@ -508,9 +507,9 @@ int main(int argc, char const* argv[])
         //{ "debug", "true" },
     };
 
-    if (argc < 3)
+    if (argc < 2)
     {
-        fprintf(stderr, "Usage: piglet-bpf-filter [pass|block|allowlist|blocklist] <BPF expression>\n");
+        fprintf(stderr, "Usage: piglet-bpf-filter <BPF expression>\n");
         exit(1);
     }
 
@@ -520,12 +519,11 @@ int main(int argc, char const* argv[])
 
     DaqConfig pcap_config("pcap", "pcaps/dns.pcap", DAQ_MODE_READ_FILE, vars);
     DataPlaneWorker wk0(pcap_config, 0, filter, match_verdict, default_verdict);
+
     sleep(2);
+
     wk0.stop();
     wk0.join();
-
-    //DataPlaneWorker wk1(vpp_inline_config, 1, filter, match_verdict, default_verdict);
-    //wk1.stop(); wk1.join();
 
     DAQ::unload_modules();
     return 0;

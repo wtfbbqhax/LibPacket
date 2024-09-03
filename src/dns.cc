@@ -16,12 +16,43 @@
 #include "packet_private.h"
 #include "packet/dns.h"
 
+#define IS_SET(test, bits) (((test) & (bits)) == (bits))
+
 struct dns_stats s_dns_stats;
 
 uint32_t constexpr MINIMUM_DNS_HEADER_SIZE = (sizeof(dns_header));
 
+//static inline void
+extern "C" void
+decode_label(uint8_t const* raw, uint8_t const* ptr, std::string& _label)
+{
+    uint8_t off;
+    uint8_t label_len;
+
+    if (ptr[0] == 0) {
+        return;
+    }
+
+    scan_again:
+    if (IS_SET(ptr[0], 0xC0)) {
+        off = ptr[1];
+        ptr = &raw[off];
+    }
+
+    label_len = ptr[0];
+    ptr++;
+
+    _label.append(reinterpret_cast<char const*>(ptr), label_len);
+    _label.append(".");
+    ptr += label_len;
+
+    if (ptr[0] != 0) {
+        goto scan_again;
+    }
+}
+
 // Function to decode the DNS protocol
-int
+extern "C" int
 decode_dns(uint8_t const * pkt, uint32_t const len, dns* dns)
 {
     if (len < MINIMUM_DNS_HEADER_SIZE) {
@@ -113,8 +144,23 @@ decode_dns(uint8_t const * pkt, uint32_t const len, dns* dns)
             s_dns_stats.dns_tooshort++;
             return -1;
         }
-        // FIXME: Store this value?
-        uint16_t name = ntohs(*(uint16_t *)ptr);
+
+        // The "name" appears to be a  partial label, but I can't find that
+        // documented in rfc1035, more testing is needed.
+        std::string name;
+        if (IS_SET(ptr[0], 0xC0)) {
+            uint8_t off = ptr[1];
+            uint8_t const* label = &pkt[off];
+            uint8_t label_len = *label;
+            while(label[0] != 0)
+            {
+              label++;
+              name.append(reinterpret_cast<char const*>(label), label_len);
+              name.append(".");
+              label += label_len;
+            }
+        }
+
         ptr += 2;
         remaining_len -= 2;
 
@@ -150,43 +196,25 @@ decode_dns(uint8_t const * pkt, uint32_t const len, dns* dns)
             return -1;
         }
 
-        const uint8_t *rdata = ptr;
-        ptr += rdlength;
-        remaining_len -= rdlength;
-
-        // Store answer information (assuming a structure in Packet to store this information)
+        // Store answer information (assuming a structure in Packet to store
+        // this information)
         a->dns_atype = atype;
         a->dns_aclass = aclass;
         a->dns_ttl = ttl;
 
-        // Parse rdata
-        while (rdata < ptr)
+        if (atype == 1 || atype == 28)
         {
-            uint16_t us = *reinterpret_cast<uint16_t const*>(rdata);
-            if (us == name)
-            {
-                rdata += 2;
-                rdlength -= 2;
-                continue;
-            }
-
-            uint8_t len = 0;
-            if (rdlength >= 1)
-            {
-                len = *rdata;
-                rdata += 1;
-            }
-            // abort if len == 0 && rdatalength > 0 // ANOMALY?
-
-            len = rdlength > len ? len : rdlength;
-
-            if (len)
-            {
-                a->data.append(reinterpret_cast<char const*>(rdata), len);
-                a->data.append(".");
-            }
-            rdata += len;
+            a->data.append(reinterpret_cast<char const*>(ptr), rdlength);
         }
+        else
+        {
+            // Parse rdata
+            decode_label(pkt, ptr, a->data);
+        }
+
+        //const uint8_t *rdata = ptr;
+        ptr += rdlength;
+        remaining_len -= rdlength;
     }
 
     return 0;

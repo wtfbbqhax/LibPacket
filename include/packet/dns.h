@@ -64,6 +64,6 @@ enum dns_types {
     TYPE_TXT // 16
 };
 
-int decode_dns(uint8_t const *pkt, uint32_t const len, dns* dns);
+extern "C" int decode_dns(uint8_t const *pkt, uint32_t const len, dns* dns);
 
 #endif /* LIBPACKET_DECODE_DNS_H */
