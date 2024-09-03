@@ -1,5 +1,5 @@
 # Using www.github.com/wtfbbqhax/krakatoa
-FROM arm64v8/krakatoa AS libpacket_dev_env
+FROM amd64/krakatoa AS libpacket_dev_env
 
 USER root
 RUN apk update
