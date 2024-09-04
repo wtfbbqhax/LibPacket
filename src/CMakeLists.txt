@@ -1,4 +1,5 @@
 set(CMAKE_C_STANDARD 11)
+set(CMAKE_CXX_STANDARD 17)
 
 add_library(
     packet
@@ -51,6 +52,7 @@ target_sources(
     icmp6.h
     vlan.c
     vlan.h
+    dns.cc
 )
 
 target_include_directories(

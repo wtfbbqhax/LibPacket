@@ -1,0 +1,56 @@
+#!abcip
+
+d(stack="eth:ip4:udp")
+c(udp:b=53)
+
+a( pay="|20 8a 01 00 00 01 00 00 00 00 00 00 03|isc" # ............isc
+       "|03|org|00 00||02 00 01|")                   # .org.....
+
+b( pay=
+    # Plain DNS header
+    "|20 8a|" #  id
+    "|81 80|" #  flags
+
+    "|00 01|" #  question count
+    "|00 04|" #  answer count
+    "|00 00|" #  authority count
+    "|00 00|" #  additional count
+
+    # Begin DNS Questions
+    "|03|isc|03|org|00|" # labels
+    "|00 02|" #  qtype [NS]
+    "|00 01|" #  qclass [IN]
+
+    # Begin Answers 1
+    "|c0 0c|" #  name
+    "|00 02|" #  type [NS]
+    "|00 01|" #  qclass [IN]
+    "|00 00 0e 10|" #  ttl
+    "|00 0e|" #  rdata length (14)
+    "|06|ns-ext|04|nrt1|c0 19|" # rdata
+
+    # Begin Answers 2
+    "|c0 0c|"
+    "|00 02|"
+    "|00 01|"
+    "|00 00 0e 10|"
+    "|00 0e|"
+    "|06|ns-ext|04|sth1|c0 0c|"
+
+    # Begin Answers 3
+    "|c0 0c|"
+    "|00 02|"
+    "|00 01|"
+    "|00 00 0e 10|"
+    "|00 09|"
+    "|06|ns-ext|c0 0c|"
+
+    # Begin Answers 4
+    "|c0 0c|"
+    "|00 02|"
+    "|00 01|"
+    "|00 00 0e 10|"
+    "|00 0e|"
+    "|06|ns-ext|04|lga1|c0 0c|"
+)
+
