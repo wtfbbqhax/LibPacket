@@ -39,13 +39,13 @@ container:
 
 .PHONY: start
 start:
-	docker run --rm -td -v "$(PWD)":/volume/libpacket "$(IMAGE_NAME)"
+	docker run --name libpacket --rm -td -v "$(PWD)":/volume/libpacket "$(IMAGE_NAME)"
 
 .PHONY: kill 
 kill:
-	docker kill $(shell docker ps --filter "ancestor=$(IMAGE_NAME)" --format "{{.ID}}")
+	docker kill libpacket
 
 .PHONY: attach
 attach:
-	docker exec -ti $(shell docker ps --filter "ancestor=$(IMAGE_NAME)" --format "{{.ID}}" | head -n1) sh
+	docker exec -ti libpacket sh
 
