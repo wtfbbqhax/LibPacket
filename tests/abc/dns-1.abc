@@ -1,0 +1,91 @@
+#!abcip
+
+d(stack="eth:ip4:udp")
+c(udp:b=53)
+
+a( pay=
+    # Client DNS Query
+    "|20 8a|" # id
+    "|01 00|" # flags
+
+    "|00 01|" #  qcount
+    "|00 00|" #  ancount
+    "|00 00|" #  aucount
+    "|00 00|" #  adcount
+
+    "|03|isc|03|org|00|" # label
+    "|00 02|" #          # qtype
+    "|00 01|" #          # qclass
+)
+
+#b( pay=
+#    "|20 8a|" #  id
+#    "|81 80|" #  flags
+#
+#    "|00 01|" #  question count
+#    "|00 04|" #  answer count
+#    "|00 00|" #  authority count
+#    "|00 00|" #  additional count
+#
+#    # Begin DNS Questions
+#    "|03|vic|03|org|00|" # labels
+#    "|00 02|" #  qtype [NS]
+#    "|00 01|" #  qclass [IN]
+#
+#    # Begin Answers 1
+#    "|c0 0c|" #  name
+#    "|00 02|" #  type [NS]
+#    "|00 01|" #  qclass [IN]
+#    "|00 00 0e 10|" #  ttl
+#    "|00 0e|" #  rdata length (14)
+#    "|06|ns-ext|04|nrt1|c0 0c|" # rdata
+#
+#    # Begin Answers 2
+#    "|c0 0c|"
+#    "|00 02|"
+#    "|00 01|"
+#    "|00 00 0e 10|"
+#    "|00 0e|"
+#    "|06|ns-ext|04|sth1|c0 0c|"
+#
+#    # Begin Answers 3
+#    "|c0 0c|"
+#    "|00 02|"
+#    "|00 01|"
+#    "|00 00 0e 10|"
+#    "|00 09|"
+#    "|06|ns-ext|c0 0c|"
+#
+#    # Begin Answers 4
+#    "|c0 0c|"
+#    "|00 02|"
+#    "|00 01|"
+#    "|00 00 0e 10|"
+#    "|00 0e|"
+#    "|06|ns-ext|04|lga1|c0 0c|"
+#)
+
+
+b( pay=
+    "|00 01|" #  id
+    "|81 80|" #  flags
+
+    "|00 01|" #  question count
+    "|00 01|" #  answer count
+    "|00 00|" #  authority count
+    "|00 00|" #  additional count
+
+    # Begin DNS Questions
+    "|03|vic|03|org|00|" # labels
+    "|00 02|" #  qtype [NS]
+    "|00 01|" #  qclass [IN]
+
+    # Begin Answers 1
+    "|c0 25|" #  name
+    "|00 02|" #  type [NS]
+    "|00 01|" #  qclass [IN]
+    "|00 00 0e 10|" #  ttl
+    "|00 06|" #  rdata length (14)
+    "|04|home|00|"
+)
+
