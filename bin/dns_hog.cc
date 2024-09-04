@@ -21,6 +21,11 @@
 #include <packet/dns.h>
 #include <pcap.h>
 
+
+#define TXT_FG_RED(str)   "\e[31m" str "\e[0m"
+#define TXT_FG_GREEN(str)   "\e[32m" str "\e[0m"
+#define TXT_FG_ORANGE(str)   "\e[33m" str "\e[0m"
+#define TXT_FG_TEAL(str)   "\e[34m" str "\e[0m"
 #define TXT_FG_PURPLE(str)   "\e[35m" str "\e[0m"
 
 #include "daq_print.h"
@@ -409,13 +414,13 @@ private:
     char const* str_from_verdict(DAQ_Verdict const& verdict)
     {
         if (verdict == DAQ_VERDICT_PASS)
-            return "\e[34m" "pass" "\e[0m";
+            return TXT_FG_TEAL("pass");
         if (verdict == DAQ_VERDICT_BLOCK)
-            return "\e[31m" "block" "\e[0m";
+            return TXT_FG_RED("block");
         if (verdict == DAQ_VERDICT_WHITELIST)
-            return "\e[32m" "allowlist" "\e[0m";
+            return TXT_FG_GREEN("allowlist");
         if (verdict == DAQ_VERDICT_BLACKLIST)
-            return "\e[35m" "blocklist" "\e[0m";
+            return TXT_FG_PURPLE("blocklist");
         if (verdict == DAQ_VERDICT_IGNORE)
             return "ignore";
         return "";
@@ -439,7 +444,7 @@ private:
                 }
 
                 verdicts.verdicts[i] = verdict;
-                printf(matched ? "[" TXT_FG_PURPLE("match") "] " : "");
+                //printf(matched ? "[" TXT_FG_PURPLE("match") "] " : "");
 		printf("[%s] ", str_from_verdict(verdict));
                 print_packet(id, hdr, data, hdr->pktlen);
             }
