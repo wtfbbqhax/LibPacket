@@ -36,9 +36,9 @@ int print_dns(dns const& dns)
 {
     bool is_response = DNS_QR(dns.h.flags);
 
-    //if (is_response)
+    if (is_response)
     {
-        printf("[dns] [rcode:%d, id:%d, qdcount: %d, ancount: %d, nscount: %d, arcount:%d]\n",
+        printf("[dns response] [rcode:%d, id:%d, qdcount: %d, ancount: %d, nscount: %d, arcount:%d]\n",
             DNS_RCODE(dns.h.flags),
             dns.h.id,
             dns.h.qdcount,
@@ -46,12 +46,12 @@ int print_dns(dns const& dns)
             dns.h.nscount,
             dns.h.arcount);
     }
-    //else
-    //{
-    //    printf("[dns query] [id:%d, qdcount: %d]\n",
-    //        dns.h.id,
-    //        dns.h.qdcount);
-    //}
+    else
+    {
+        printf("[dns query] [id:%d, qdcount: %d]\n",
+            dns.h.id,
+            dns.h.qdcount);
+    }
 
     // Parsing Question Section
     for (int i = 0; i < dns.h.qdcount; i++)
