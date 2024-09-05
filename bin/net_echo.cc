@@ -32,7 +32,7 @@
 
 /* DLT_RAW
  *
- * Mandatory, as the redacted daq only supports L3 delivery.
+ * Mandatory, as the VPP daq only supports L3 delivery.
  *
  * This is used to set the "base protocol" used in libpcap and libpacket
  * features.
@@ -49,7 +49,7 @@
 /* SNAPLEN
  *
  *  The SNAPLEN is the absolulte maximum size packet we support processing.
- *  NOTICE: This value should be defined by redacted as the vlib buffer size.
+ *  NOTICE: This value should be defined by VPP as the vlib buffer size.
  */
 #define SNAPLEN 2048
 
@@ -62,7 +62,7 @@
 
 /* STATIC_MODULES
  *
- *  Enables the support of builtin libdaq_static_redacted.a
+ *  Enables the support of builtin libdaq_static_redacted.la
  *
  * If you're in a pinch and need to build an all-in-one static binary, you can
  * do it, but not using the Makefile. */
@@ -71,6 +71,11 @@
 #define UNUSED(name) name ## _unused __attribute__ ((unused))
 #define IS_SET(test, bits) (((test) & (bits)) == (bits))
 
+#ifndef UNIX_PATH_MAX
+#define UNIX_PATH_MAX (sizeof(((struct sockaddr_un*)NULL)->sun_path))
+#endif
+
+using socketpath_t = char[UNIX_PATH_MAX];
 
 #define ERRBUF_SIZE 256
 using Errbuf = std::array<char, ERRBUF_SIZE>;
@@ -295,6 +300,16 @@ public:
         msgs.recv_count = 0;
     }
 
+    int inject_relative(DAQ_Msg_h const& msg, uint8_t const* data, uint32_t const len)
+    {
+        return daq_instance_inject_relative(
+                instance,
+                msg,
+                data,
+                len,
+                false);
+    }
+
     DAQ_Stats_t get_stats() const
     {
         DAQ_Stats_t stats;
@@ -323,7 +338,8 @@ public:
         : config(config),
           id(id),
           match_verdict(verdict),
-          default_verdict(default_verdict)
+          default_verdict(default_verdict),
+	  _in(nullptr)
     {
         pcap_t *dead = pcap_open_dead(DLT_EN10MB, SNAPLEN);
         if (dead == nullptr)
@@ -337,12 +353,6 @@ public:
 
         pcap_close(dead);
         dead = nullptr;
-
-        //if (pcap_compile_nopcap(SNAPLEN, DLT_EN10MB, &fcode, filter.c_str(), 0, PCAP_NETMASK_UNKNOWN) == -1)
-        //{
-        //    fprintf(stderr, "%s: BPF state machine compilation failed!", __func__);
-        //    abort();
-        //}
 
         int result = bpf_validate(fcode.bf_insns, fcode.bf_len);
         if (result != 1)
@@ -377,6 +387,7 @@ public:
     void eval()
     {
         DaqInstance in(config);
+	_in = &in;
 
         in.instantiate();
         in.start();
@@ -389,6 +400,7 @@ public:
             if (recv.frame.recv_count > 0) {
                 print_packets(recv.frame);
             }
+	    respond(recv.frame);
 
             if (recv.status == DAQ_RSTAT_ERROR ||
                 recv.status == DAQ_RSTAT_INVALID) {
@@ -456,6 +468,31 @@ private:
         }
     }
 
+    void respond(DaqMsgFrame const& frame)
+    {
+        for (unsigned i = 0; i < frame.recv_count; i++)
+        {
+            auto const & msg = frame.msgs[i];
+            if (msg->type == DAQ_MSG_TYPE_PACKET) {
+	    }
+
+	    DAQ_PktHdr_t const * hdr = daq_msg_get_pkthdr(msg);
+	    uint8_t const * data = daq_msg_get_data(msg);
+	    uint32_t const size = daq_msg_get_data_len(msg);
+
+	    if (filter_packet(hdr, data, size, fcode) == 0) {
+		continue;
+	    }
+            printf("[" TXT_FG_PURPLE("inject") "] ");
+            print_packet(id, hdr, data, hdr->pktlen);
+	    _in->inject_relative(nullptr, data, size);
+	    _in->inject_relative(nullptr, data, size);
+	    _in->inject_relative(nullptr, data, size);
+	}
+
+	return;
+    }
+
     DaqConfig config;
     unsigned id;
 
@@ -467,6 +504,8 @@ private:
 
     DAQ_Verdict match_verdict;
     DAQ_Verdict default_verdict = DAQ_VERDICT_PASS;
+
+    DaqInstance* _in;
 };
 
 // this is similar to how tcpdump
@@ -512,21 +551,24 @@ int main(int argc, char const* argv[])
     DaqVars vars {
         { "debug", "true" },
     };
- 
-    if (argc < 2)
+
+    if (argc < 3)
     {
-        fprintf(stderr, "Usage: dnshog <pcap>\n");
+        fprintf(stderr, "Usage: net_echo <device> <bpf filter>\n");
         exit(1);
     }
 
     DAQ_Verdict default_verdict = DAQ_VERDICT_PASS;
-    DAQ_Verdict match_verdict = verdict_from_str("pass");
-    std::string filter = "port 53";
+    //DAQ_Verdict match_verdict = verdict_from_str("pass");
+    DAQ_Verdict match_verdict = DAQ_VERDICT_BLOCK;
+    std::string filter = concat_args(argc-2, argv+2);
 
-    DaqConfig pcap_config("pcap", argv[1], DAQ_MODE_READ_FILE, vars);
-    DataPlaneWorker wk0(pcap_config, 0, filter, match_verdict, default_verdict);
+    fprintf(stderr, "Bpf: %s\n", filter.c_str());
 
-    sleep(2);
+    DaqConfig afpacket_config("afpacket", argv[1], DAQ_MODE_INLINE, vars);
+    DataPlaneWorker wk0(afpacket_config, 0, filter, match_verdict, default_verdict);
+
+    sleep(20);
 
     wk0.stop();
     wk0.join();

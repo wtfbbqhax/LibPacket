@@ -32,14 +32,14 @@
 
 /* DLT_RAW
  *
- * Mandatory, as the redacted daq only supports L3 delivery.
+ * Mandatory, as the VPP daq only supports L3 delivery. 
  *
  * This is used to set the "base protocol" used in libpcap and libpacket
- * features.
+ * features. 
  */
 //#define DLT_RAW 12
 
-/* DAQ_BATCH_SIZE
+/* DAQ_BATCH_SIZE 
  *
  * The maximum number of packets (DAQ_Msg_h) that we will batch read/process at
  * once.
@@ -48,21 +48,21 @@
 
 /* SNAPLEN
  *
- *  The SNAPLEN is the absolulte maximum size packet we support processing.
- *  NOTICE: This value should be defined by redacted as the vlib buffer size.
+ *  The SNAPLEN is the absolulte maximum size packet we support processing. 
+ *  NOTICE: This value should be defined by VPP as the vlib buffer size.
  */
 #define SNAPLEN 2048
 
 /* TIMEOUT
  *
- * The TIMEOUT amount of usec waiting for daq_receive to return.
+ * The TIMEOUT amount of usec waiting for daq_receive to return. 
  * NOTICE: TIMEOUT support in redacted DAQ only works in interrupt mode.
  */
 #define TIMEOUT 100
 
 /* STATIC_MODULES
  *
- *  Enables the support of builtin libdaq_static_redacted.a
+ *  Enables the support of builtin libdaq_static_redacted.la
  *
  * If you're in a pinch and need to build an all-in-one static binary, you can
  * do it, but not using the Makefile. */
@@ -71,6 +71,11 @@
 #define UNUSED(name) name ## _unused __attribute__ ((unused))
 #define IS_SET(test, bits) (((test) & (bits)) == (bits))
 
+#ifndef UNIX_PATH_MAX
+#define UNIX_PATH_MAX (sizeof(((struct sockaddr_un*)NULL)->sun_path))
+#endif
+
+using socketpath_t = char[UNIX_PATH_MAX];
 
 #define ERRBUF_SIZE 256
 using Errbuf = std::array<char, ERRBUF_SIZE>;
@@ -96,7 +101,6 @@ namespace DAQ
 
     static char const *module_paths[] =
     {
-        "/usr/local/lib/abcip",
         "/usr/local/lib/daq",
         nullptr
     };
@@ -331,18 +335,13 @@ public:
 
         if (pcap_compile(dead, &fcode, filter.c_str(), 0, PCAP_NETMASK_UNKNOWN) == -1)
         {
-            fprintf(stderr, "%s: BPF state machine compilation failed!", __func__);
+            fprintf(stderr, "%s: BPF state machine compilation failed! (%s)",
+                            __func__, filter.c_str());
             abort();
         }
 
         pcap_close(dead);
         dead = nullptr;
-
-        //if (pcap_compile_nopcap(SNAPLEN, DLT_EN10MB, &fcode, filter.c_str(), 0, PCAP_NETMASK_UNKNOWN) == -1)
-        //{
-        //    fprintf(stderr, "%s: BPF state machine compilation failed!", __func__);
-        //    abort();
-        //}
 
         int result = bpf_validate(fcode.bf_insns, fcode.bf_len);
         if (result != 1)
@@ -449,7 +448,7 @@ private:
                 }
 
                 verdicts.verdicts[i] = verdict;
-                printf(matched ? "[" TXT_FG_PURPLE("match") "] " : "");
+                printf(matched ? "[" TXT_FG_PURPLE("!") "] " : "");
                 printf("[%s] ", str_from_verdict(verdict));
                 print_packet(id, hdr, data, hdr->pktlen);
             }
@@ -469,7 +468,7 @@ private:
     DAQ_Verdict default_verdict = DAQ_VERDICT_PASS;
 };
 
-// this is similar to how tcpdump
+// this is similar to how tcpdump 
 static inline std::string
 concat_args(int argc, char const* argv[])
 {
@@ -512,16 +511,16 @@ int main(int argc, char const* argv[])
     DaqVars vars {
         { "debug", "true" },
     };
- 
-    if (argc < 2)
+
+    if (argc < 3)
     {
-        fprintf(stderr, "Usage: dnshog <pcap>\n");
+        fprintf(stderr, "Usage: bpf_filter <pcap> <verdict> <bpf expression>\n");
         exit(1);
     }
 
     DAQ_Verdict default_verdict = DAQ_VERDICT_PASS;
-    DAQ_Verdict match_verdict = verdict_from_str("pass");
-    std::string filter = "port 53";
+    DAQ_Verdict match_verdict = verdict_from_str(argv[2]);
+    std::string filter = concat_args(argc-3, argv+3);
 
     DaqConfig pcap_config("pcap", argv[1], DAQ_MODE_READ_FILE, vars);
     DataPlaneWorker wk0(pcap_config, 0, filter, match_verdict, default_verdict);
