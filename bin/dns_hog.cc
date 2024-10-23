@@ -509,15 +509,16 @@ int main(int argc, char const* argv[])
 
     if (argc < 2)
     {
-        fprintf(stderr, "Usage: piglet-bpf-filter <BPF expression>\n");
+        fprintf(stderr, "Usage: dnshog <pcap>\n");
         exit(1);
     }
 
     DAQ_Verdict default_verdict = DAQ_VERDICT_PASS;
-    DAQ_Verdict match_verdict = verdict_from_str(argv[1]);
+    //DAQ_Verdict match_verdict = verdict_from_str(argv[1]);
+    DAQ_Verdict match_verdict = verdict_from_str("pass");
     std::string filter = concat_args(argc-2, argv+2);
 
-    DaqConfig pcap_config("pcap", "pcaps/dns.pcap", DAQ_MODE_READ_FILE, vars);
+    DaqConfig pcap_config("pcap", argv[1], DAQ_MODE_READ_FILE, vars);
     DataPlaneWorker wk0(pcap_config, 0, filter, match_verdict, default_verdict);
 
     sleep(2);
