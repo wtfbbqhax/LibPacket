@@ -32,6 +32,7 @@ uninstall:
 # If you have a working Docker environment, you can use and contribute to this
 # code base.
 IMAGE_NAME=wtfbbqhax/libpacket
+CONTAINER_NAME=wtfbbqhax-libpacket-0
 
 .PHONY: container 
 container:
@@ -39,13 +40,17 @@ container:
 
 .PHONY: start
 start:
-	docker run --name libpacket --rm -td -v "$(PWD)":/volume/libpacket "$(IMAGE_NAME)"
+	docker run \
+		--name $(CONTAINER_NAME) \
+		--rm -td \
+		-v "$(PWD)":/volume/libpacket \
+		$(IMAGE_NAME)
 
 .PHONY: kill 
 kill:
-	docker kill libpacket
+	docker kill $(CONTAINER_NAME)
 
 .PHONY: attach
 attach:
-	docker exec -ti libpacket sh
+	docker exec -ti $(CONTAINER_NAME) sh
 
