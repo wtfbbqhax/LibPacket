@@ -781,9 +781,10 @@ int main (int argc, char const *argv[])
 
     DaqVars vars {
         { "debug", "true" },
-        { "use_tx_ring", "false" },
-        { "fanout_type", "lb" },
-        { "buffer_size_mb", "max" },
+        { "zc", "0" },
+        //{ "use_tx_ring", "false" },
+        //{ "fanout_type", "lb" },
+        //{ "buffer_size_mb", "max" },
     };
 
     DAQ_Verdict default_verdict = DAQ_VERDICT_PASS;
@@ -791,7 +792,7 @@ int main (int argc, char const *argv[])
     std::string filter = "ip and host ";
     filter += opt__src_ipaddr;
 
-    DaqConfig afpacket_config("afpacket", opt__ifr_name, DAQ_MODE_INLINE, vars);
+    DaqConfig afpacket_config("afxdp", opt__ifr_name, DAQ_MODE_INLINE, vars);
     DataPlaneWorker wk0(afpacket_config, 0, filter, match_verdict, default_verdict, packet);
     //DataPlaneWorker wk1(afpacket_config, 1, filter, match_verdict, default_verdict, packet);
     //DataPlaneWorker wk2(afpacket_config, 2, filter, match_verdict, default_verdict, packet);

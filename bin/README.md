@@ -24,6 +24,13 @@ Demos, and samples featuring libdaq as wire intercept.
         -l 3000000 &> /dev/null
     ```
 
+    /volume/libpacket/bin # sudo ./build/flood \
+        -e 2 -i eno1 -D 6c:c3:b2:69:7a:f8 --src-ip 192.168.30.4 --dst-ip 192.168.20.2 -l 10
+
+
+    # Vanilla MX, Vlan 50
+    bin # ./build/flood -e 2 -i eno1 -D ac:17:c8:c5:26:a3 --src-ip 192.168.50.5 --dst-ip 192.168.51.3 -l 1
+
     The packet generation is not as fast as desired
 
     Test 1

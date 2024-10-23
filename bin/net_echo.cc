@@ -15,6 +15,8 @@
 #include <thread>
 #include <vector>
 
+#include <netinet/tcp.h>
+
 #include <daq.h>
 #include <daq_module_api.h>
 #include <packet.h>
@@ -146,74 +148,74 @@ namespace DAQ
 //
 class DaqConfig
 {
-public:
-    DaqConfig(std::string module, std::string input, DAQ_Mode mode, DaqVars const & vars)
-        : module(module),
-          input(input),
-          mode(mode),
-          vars(vars)
+    public:
+        DaqConfig(std::string module, std::string input, DAQ_Mode mode, DaqVars const & vars)
+            : module(module),
+            input(input),
+            mode(mode),
+            vars(vars)
     { }
 
-    struct DAQ_Config_p
-    {
-        DAQ_Config_p(std::string module, std::string input, DAQ_Mode mode, DaqVars const & vars)
-            : config(nullptr)
+        struct DAQ_Config_p
         {
-            daq_config_new(&config);
-            daq_config_set_input(config, input.c_str());
-            daq_config_set_snaplen(config, SNAPLEN);
-            daq_config_set_timeout(config, TIMEOUT);
+            DAQ_Config_p(std::string module, std::string input, DAQ_Mode mode, DaqVars const & vars)
+                : config(nullptr)
+            {
+                daq_config_new(&config);
+                daq_config_set_input(config, input.c_str());
+                daq_config_set_snaplen(config, SNAPLEN);
+                daq_config_set_timeout(config, TIMEOUT);
 
-            DAQ_Module_h mod = daq_find_module(module.c_str());
-            if (mod == nullptr) {
+                DAQ_Module_h mod = daq_find_module(module.c_str());
+                if (mod == nullptr) {
+                    daq_config_destroy(config);
+                    config = nullptr;
+                }
+
+                DAQ_ModuleConfig_h modconf = nullptr;
+                int result = daq_module_config_new(&modconf, mod);
+                if (result != DAQ_SUCCESS) {
+                    daq_config_destroy(config);
+                    config = nullptr;
+                }
+
+                daq_module_config_set_mode(modconf, mode);
+                for (auto const & var : vars) {
+                    daq_module_config_set_variable(modconf, var.first.c_str(), var.second.c_str());
+                }
+
+                result = daq_config_push_module_config(config, modconf);
+                if (result != DAQ_SUCCESS) {
+                    // NOTICE This is the only time we are allowed to call this ourselves.
+                    daq_module_config_destroy(modconf);
+                    modconf = nullptr;
+
+                    daq_config_destroy(config);
+                    config = nullptr;
+                }
+            }
+
+            ~DAQ_Config_p()
+            {
+                // Calling daq_config_destroy will call
+                // `daq_module_config_destroy(modcfg)` on each module.
                 daq_config_destroy(config);
                 config = nullptr;
             }
 
-            DAQ_ModuleConfig_h modconf = nullptr;
-            int result = daq_module_config_new(&modconf, mod);
-            if (result != DAQ_SUCCESS) {
-                daq_config_destroy(config);
-                config = nullptr;
-            }
+            DAQ_Config_h config;
+        };
 
-            daq_module_config_set_mode(modconf, mode);
-            for (auto const & var : vars) {
-                daq_module_config_set_variable(modconf, var.first.c_str(), var.second.c_str());
-            }
-
-            result = daq_config_push_module_config(config, modconf);
-            if (result != DAQ_SUCCESS) {
-                // NOTICE This is the only time we are allowed to call this ourselves.
-                daq_module_config_destroy(modconf);
-                modconf = nullptr;
-
-                daq_config_destroy(config);
-                config = nullptr;
-            }
+        DAQ_Config_p get_config() const
+        {
+            return DAQ_Config_p(module, input, mode, vars);
         }
 
-        ~DAQ_Config_p()
-        {
-            // Calling daq_config_destroy will call
-            // `daq_module_config_destroy(modcfg)` on each module.
-            daq_config_destroy(config);
-            config = nullptr;
-        }
-
-        DAQ_Config_h config;
-    };
-
-    DAQ_Config_p get_config() const
-    {
-        return DAQ_Config_p(module, input, mode, vars);
-    }
-
-private:
-    std::string module;
-    std::string input;
-    DAQ_Mode mode;
-    DaqVars vars;
+    private:
+        std::string module;
+        std::string input;
+        DAQ_Mode mode;
+        DaqVars vars;
 };
 
 #define FRAME_SIZE 256
@@ -237,109 +239,109 @@ struct RecvResult
 
 class DaqInstance
 {
-public:
-    DaqInstance(DaqConfig const & config)
-        : instance(NULL), config(config)
-    {}
+    public:
+        DaqInstance(DaqConfig const & config)
+            : instance(NULL), config(config)
+        {}
 
-    ~DaqInstance()
-    {
-        if (instance) {
-            daq_instance_destroy(instance);
-            instance = nullptr;
-        }
-
-        msgs.recv_count = 0;
-    }
-
-    DaqInstance(DaqInstance const & other)
-        : config(other.config)
-    { }
-
-    int instantiate()
-    {
-        return daq_instance_instantiate(
-                config.get_config().config,
-                &instance,
-                errbuf.data(),
-                errbuf.size());
-    }
-
-    int start()
-    {
-        return daq_instance_start(instance);
-    }
-
-    int stop()
-    {
-        return daq_instance_stop(instance);
-    }
-
-    RecvResult receive_msgs()
-    {
-        DAQ_RecvStatus rstat;
-        msgs.recv_count = daq_instance_msg_receive(
-                instance,
-                msgs.msgs.max_size(),
-                msgs.msgs.data(),
-                &rstat);
-
-        return { rstat, msgs };
-    }
-
-    //void finalize_msgs(DAQ_Verdict const & verdict)
-    void finalize_msgs(DaqVerdictFrame const & verdicts)
-    {
-        for (unsigned i = 0; i < msgs.recv_count; i++)
+        ~DaqInstance()
         {
-            DAQ_Msg_h msg = msgs.msgs[i];
-            DAQ_Verdict verdict = verdicts.verdicts[i];
-            daq_instance_msg_finalize(instance, msg, verdict);
+            if (instance) {
+                daq_instance_destroy(instance);
+                instance = nullptr;
+            }
+
+            msgs.recv_count = 0;
         }
 
-        msgs.recv_count = 0;
-    }
+        DaqInstance(DaqInstance const & other)
+            : config(other.config)
+        { }
 
-    int inject_relative(DAQ_Msg_h const& msg, uint8_t const* data, uint32_t const len)
-    {
-        return daq_instance_inject_relative(
-                instance,
-                msg,
-                data,
-                len,
-                false);
-    }
+        int instantiate()
+        {
+            return daq_instance_instantiate(
+                    config.get_config().config,
+                    &instance,
+                    errbuf.data(),
+                    errbuf.size());
+        }
 
-    DAQ_Stats_t get_stats() const
-    {
-        DAQ_Stats_t stats;
-        daq_instance_get_stats(instance, &stats);
-        return stats;
-    }
+        int start()
+        {
+            return daq_instance_start(instance);
+        }
 
-    void reset_stats() const
-    {
-        daq_instance_reset_stats(instance);
-    }
+        int stop()
+        {
+            return daq_instance_stop(instance);
+        }
 
-private:
-    DAQ_Instance_h instance;
-    DaqConfig config;
-    DaqMsgFrame msgs;
-    Errbuf errbuf;
+        RecvResult receive_msgs()
+        {
+            DAQ_RecvStatus rstat;
+            msgs.recv_count = daq_instance_msg_receive(
+                    instance,
+                    msgs.msgs.max_size(),
+                    msgs.msgs.data(),
+                    &rstat);
+
+            return { rstat, msgs };
+        }
+
+        //void finalize_msgs(DAQ_Verdict const & verdict)
+        void finalize_msgs(DaqVerdictFrame const & verdicts)
+        {
+            for (unsigned i = 0; i < msgs.recv_count; i++)
+            {
+                DAQ_Msg_h msg = msgs.msgs[i];
+                DAQ_Verdict verdict = verdicts.verdicts[i];
+                daq_instance_msg_finalize(instance, msg, verdict);
+            }
+
+            msgs.recv_count = 0;
+        }
+
+        int inject_relative(DAQ_Msg_h const& msg, uint8_t const* data, uint32_t const len)
+        {
+            return daq_instance_inject_relative(
+                    instance,
+                    msg,
+                    data,
+                    len,
+                    false);
+        }
+
+        DAQ_Stats_t get_stats() const
+        {
+            DAQ_Stats_t stats;
+            daq_instance_get_stats(instance, &stats);
+            return stats;
+        }
+
+        void reset_stats() const
+        {
+            daq_instance_reset_stats(instance);
+        }
+
+    private:
+        DAQ_Instance_h instance;
+        DaqConfig config;
+        DaqMsgFrame msgs;
+        Errbuf errbuf;
 };
 
 class DataPlaneWorker
 {
     using threadname_t = char[256];
 
-public:
+    public:
     DataPlaneWorker(DaqConfig config, unsigned id, std::string filter, DAQ_Verdict verdict, DAQ_Verdict default_verdict)
         : config(config),
-          id(id),
-          match_verdict(verdict),
-          default_verdict(default_verdict),
-	  _in(nullptr)
+        id(id),
+        match_verdict(verdict),
+        default_verdict(default_verdict),
+        _in(nullptr)
     {
         pcap_t *dead = pcap_open_dead(DLT_EN10MB, SNAPLEN);
         if (dead == nullptr)
@@ -387,7 +389,7 @@ public:
     void eval()
     {
         DaqInstance in(config);
-	_in = &in;
+        _in = &in;
 
         in.instantiate();
         in.start();
@@ -400,10 +402,10 @@ public:
             if (recv.frame.recv_count > 0) {
                 print_packets(recv.frame);
             }
-	    respond(recv.frame);
+            respond(recv.frame);
 
             if (recv.status == DAQ_RSTAT_ERROR ||
-                recv.status == DAQ_RSTAT_INVALID) {
+                    recv.status == DAQ_RSTAT_INVALID) {
                 state = STOP;
             }
 
@@ -419,7 +421,7 @@ public:
         state = STOP;
     }
 
-private:
+    private:
     bool filter_packet(UNUSED(DAQ_PktHdr_t const* hdr),
             uint8_t const* data,
             uint32_t const size,
@@ -459,6 +461,9 @@ private:
                     verdict = match_verdict;
                     matched = true;
                 }
+                else {
+                    continue;
+                }
 
                 verdicts.verdicts[i] = verdict;
                 printf(matched ? "[" TXT_FG_PURPLE("match") "] " : "");
@@ -474,23 +479,69 @@ private:
         {
             auto const & msg = frame.msgs[i];
             if (msg->type == DAQ_MSG_TYPE_PACKET) {
-	    }
 
-	    DAQ_PktHdr_t const * hdr = daq_msg_get_pkthdr(msg);
-	    uint8_t const * data = daq_msg_get_data(msg);
-	    uint32_t const size = daq_msg_get_data_len(msg);
+                DAQ_PktHdr_t const * hdr = daq_msg_get_pkthdr(msg);
+                uint8_t const * data = daq_msg_get_data(msg);
+                uint32_t const size = daq_msg_get_data_len(msg);
 
-	    if (filter_packet(hdr, data, size, fcode) == 0) {
-		continue;
-	    }
-            printf("[" TXT_FG_PURPLE("inject") "] ");
-            print_packet(id, hdr, data, hdr->pktlen);
-	    _in->inject_relative(nullptr, data, size);
-	    _in->inject_relative(nullptr, data, size);
-	    _in->inject_relative(nullptr, data, size);
-	}
+                if (filter_packet(hdr, data, size, fcode) == 0) {
+                    continue;
+                }
 
-	return;
+#ifdef PRINT_PACKET_LAYERS
+                // Extra debug logging
+                std::stringstream ss_proto_names;
+                Protocol *_p = nullptr;
+                for (Protocol *_p = packet_proto_first(&packet, &it);
+                        _p; _p = packet_proto_next(&packet, &it))
+                {
+                    if (_p->protocol == PROTOCOL_TCP)
+                        break;
+                }
+
+                // Found TCP, lets modify
+                if (_p) {
+                    struct tcphdr *th = reinterpret_cast<struct tcphdr*>(_p->start);
+                    uint32_t recv = ntohl(th->th_seq);
+                    uint32_t writ = ntohl(th->th_ack);
+
+                    // clear syn
+                    if (th->syn) {
+                        th->syn = 0;
+                        recv++;
+                    }
+
+                    // clear fin
+                    if (th->fin) {
+                        th->fin = 0;
+                        recv++;
+                    }
+
+                    // Add ack
+                    if (th->ack == 0) {
+                        th->ack = 1;
+                    }
+
+                    // Add data
+                    recv += p->paysize;
+                    writ += p->paysize;
+
+                    // Acknowledge the data
+                    th->th_ack = htonl(recv);
+                    th->th_seq = htonl(writ);
+                }
+
+                log_raw_debug("%s", ss_proto_names.str().c_str());
+#endif
+
+
+                printf("[" TXT_FG_PURPLE("inject") "] ");
+                print_packet(id, hdr, data, hdr->pktlen);
+                _in->inject_relative(nullptr, data, size);
+            }
+        }
+
+        return;
     }
 
     DaqConfig config;
@@ -509,7 +560,7 @@ private:
 };
 
 // this is similar to how tcpdump
-static inline std::string
+    static inline std::string
 concat_args(int argc, char const* argv[])
 {
     std::string result;
@@ -524,7 +575,7 @@ concat_args(int argc, char const* argv[])
     return result;
 }
 
-static inline DAQ_Verdict
+    static inline DAQ_Verdict
 verdict_from_str(std::string const& arg)
 {
     if (arg == "pass")
@@ -568,7 +619,9 @@ int main(int argc, char const* argv[])
     DaqConfig afpacket_config("afpacket", argv[1], DAQ_MODE_INLINE, vars);
     DataPlaneWorker wk0(afpacket_config, 0, filter, match_verdict, default_verdict);
 
-    sleep(20);
+    while (true) {
+        sleep(5);
+    }
 
     wk0.stop();
     wk0.join();

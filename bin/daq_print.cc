@@ -6,6 +6,7 @@
 #include <ctype.h>
 #include <arpa/inet.h>
 #include <netdb.h>
+#include <sstream>
 
 #include <daq.h>
 #include <packet/packet.h>
@@ -130,6 +131,30 @@ void print_data(uint8_t const * data, int64_t length)
     }
 }
 
+# define TH_FIN 0x01
+# define TH_SYN 0x02
+# define TH_RST 0x04
+# define TH_PSH 0x08
+# define TH_ACK 0x10
+# define TH_URG 0x20
+
+std::string print_tcpflags(Packet& p)
+{
+    // Fixit, should be const
+    int flags = packet_tcpflags(&p);
+    std::stringstream ss;
+    
+    if (IS_SET(flags, TH_FIN))
+        ss << "F";
+    if (IS_SET(flags, TH_SYN))
+        ss << "S";
+    if (IS_SET(flags, TH_RST))
+        ss << "R";
+    if (IS_SET(flags, TH_ACK))
+        ss << "A";
+
+    return ss.str();
+}
 
 void
 print_packet(int const instance_id, DAQ_PktHdr_t const* hdr, uint8_t const * data, size_t const len)
@@ -169,13 +194,21 @@ print_packet(int const instance_id, DAQ_PktHdr_t const* hdr, uint8_t const * dat
     char addr[INET6_ADDRSTRLEN];
     printf("[src: %s, ", inet_ntop(af, a, addr, sizeof(addr)));
     printf("dst: %s, ", inet_ntop(af, b, addr, sizeof(addr)));
-    printf("proto: %d, id: %d, sp: %d, dp: %d, dlen: %u] [instance: %d]\n",
+    printf("proto: %d, id: %d, sp: %d, dp: %d, dlen: %u] [instance: %d]",
             proto,
             packet_id(&packet),
             sport,
             dport,
             packet_paysize(&packet),
             instance_id);
+
+
+    std::string flags = print_tcpflags(packet);
+    if (flags.size()) {
+        printf(" [flags: %s]\n", flags.c_str());
+    } else {
+        printf("\n");
+    }
 
     if (packet_is_fragment(&packet))
     {
