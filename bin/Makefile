@@ -4,7 +4,7 @@
 .PHONY: build 
 build:
 	cmake -B build -G Ninja . \
-		  -D CMAKE_BUILD_TYPE:STRING=Debug \
+		  -D CMAKE_BUILD_TYPE:STRING=Release \
 		  -D CMAKE_EXPORT_COMPILE_COMMANDS:BOOL=TRUE
 	cmake --build build
 

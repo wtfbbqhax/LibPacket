@@ -91,3 +91,26 @@ target_link_libraries(
     pcap
     packet
 )
+
+# UDP All Stars - Network flood generator
+# Static packet format is hardcoded in code
+add_executable(
+   allstars 
+)
+
+target_sources(
+    allstars
+    PRIVATE
+    allstars.cc
+    daq_print.cc
+    daq_print.h
+    csum.c
+)
+
+target_link_libraries(
+    allstars 
+    PRIVATE
+    daq
+    pcap
+    packet
+)

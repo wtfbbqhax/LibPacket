@@ -46,6 +46,7 @@
 #include <netinet/ether.h>
 #include <netinet/ip.h>
 #include <netinet/tcp.h>
+#include <netinet/udp.h>
 #include <net/ethernet.h>
 #include <netinet/if_ether.h>
 
@@ -72,6 +73,19 @@ struct PacketTemplate {
     struct tcphdr       tcp;
     unsigned char       payload[(PKTBUFSIZ - FIXEDSIZE)];
 } __attribute__((__packed__));
+
+#define UDP_FIXEDSIZE \
+    (sizeof(struct ether_header)+sizeof(struct ip)*1+sizeof(struct udphdr))
+
+struct UDPPacketTemplate {
+    struct ether_header eth;
+    struct ip           ip;
+    struct udphdr       udp;
+    unsigned char       payload[(PKTBUFSIZ - UDP_FIXEDSIZE)];
+} __attribute__((__packed__));
+
+
+
 
 /***************************************************************************
  *                             Runtime Options                             *
@@ -497,7 +511,7 @@ class DataPlaneWorker
     using threadname_t = char[256];
 
 public:
-    DataPlaneWorker(DaqConfig config, unsigned id, std::string filter, DAQ_Verdict verdict, DAQ_Verdict default_verdict, PacketTemplate& packet)
+    DataPlaneWorker(DaqConfig config, unsigned id, std::string filter, DAQ_Verdict verdict, DAQ_Verdict default_verdict, UDPPacketTemplate& packet)
         : config(config),
           id(id),
           match_verdict(verdict),
@@ -626,8 +640,10 @@ private:
 
             uint16_t ip_len = ntohs(packet.ip.ip_len);
             size_t pktlen = ip_len + sizeof(packet.eth);
-            packet.tcp.th_sport = htons(src_port);
-            packet.tcp.th_dport = htons(80);
+            //packet.tcp.th_sport = htons(src_port);
+            //packet.tcp.th_dport = htons(80);
+            packet.udp.uh_dport = htons(80);
+            //packet.udp.uh_sport = htons(src_port);
             ip_checksum(&packet.ip, ip_len);
 
             printf("[" TXT_FG_PURPLE("inject") "] ");
@@ -684,7 +700,7 @@ private:
     DAQ_Verdict default_verdict = DAQ_VERDICT_PASS;
 
     /* Data-plane, runtime state */
-    PacketTemplate packet;
+    UDPPacketTemplate packet;
     unsigned attack_i;
     uint16_t src_port;
 };
@@ -696,7 +712,7 @@ int main (int argc, char const *argv[])
 
     /* Initialize the packet data */
     fprintf(stdout, "[+] Framming packet template\n");
-    PacketTemplate packet = {};
+    UDPPacketTemplate packet = {};
 
     /* ETHERNET Frame */
     packet.eth.ether_type = htons(ETHERTYPE_IP);
@@ -722,7 +738,7 @@ int main (int argc, char const *argv[])
 
     /* IP Datagram */
     //int ip_len = FIXEDSIZE - sizeof(packet.eth) + payload.length();
-    int ip_len = FIXEDSIZE - sizeof(packet.eth) + payload.length();
+    int ip_len = UDP_FIXEDSIZE - sizeof(packet.eth) + payload.length();
 
     packet.ip.ip_v      = MY_IP_VERS;
     packet.ip.ip_hl     = MY_IP_HLEN;
@@ -730,6 +746,7 @@ int main (int argc, char const *argv[])
     packet.ip.ip_len    = htons(ip_len);
     //packet.ip.ip_p      = IPPROTO_IPIP;
     packet.ip.ip_p      = IPPROTO_TCP;
+    packet.ip.ip_p      = IPPROTO_UDP;
 
     if ( inet_pton(AF_INET, opt__src_ipaddr, &packet.ip.ip_src) <= 0 )
     {
@@ -753,11 +770,13 @@ int main (int argc, char const *argv[])
     //inet_pton(AF_INET, "10.9.8.7", &packet.ip2.ip_dst);
 
     /* TCP Header */
-    packet.tcp.th_off   = 0x5;
-    packet.tcp.th_win   = htons(256);
+    //packet.tcp.th_off   = 0x5;
+    //packet.tcp.th_win   = htons(256);
     //packet.tcp.th_flags = TH_SYN|TH_ACK;
-    packet.tcp.th_flags = TH_SYN;
+    //packet.tcp.th_flags = TH_SYN;
 
+    // UDP
+    packet.udp.uh_ulen = htons(payload.length());
     memcpy(packet.payload, payload.c_str(), payload.length());
 
     fprintf(stdout, "[+] Initializing DAQ!\n");
