@@ -26,20 +26,41 @@ Prerequisites
  * Docker (optional for contributors)
  * A compatible C compiler
 
-# Installation
+# How to 
 
-1.	Clone the Repository:
+1.	Clone the repository 
 
-```
+```sh
 git clone https://github.com/wtfbbqhax/LibPacket.git libpacket
 cd libpacket
 ```
 
-2.	Build and Install:
+2. Build and install
+
+```sh
+# Build the source code
+make build
+
+# Install libpacket.so and headers to /usr/local
+sudo make install
+```
+
+3. Build and start the development container. (optional)
+
+> [!NOTE] Requires Docker
 
 ```
-make build
-sudo make install
+# Build the development container
+make container
+
+# Start the dev container
+make start
+
+# Attach to the dev container
+make attach
+
+# Stop the dev container
+make stop
 ```
 
 ## Usage
@@ -108,42 +129,42 @@ Decode's "raw\_data" and writes results into "packet".
 ### Protocol Layers
 
 ```c
-Protocol*       packet_proto_first(Packet *packet, unsigned *);
-Protocol*       packet_proto_next(Packet *packet, unsigned *);
-unsigned        packet_proto_count(Packet *packet);
+Protocol* packet_proto_first(Packet *packet, unsigned *);
+Protocol* packet_proto_next(Packet *packet, unsigned *);
+unsigned packet_proto_count(Packet *packet);
 
-PROTOCOL        packet_proto_proto(Protocol *proto);
-int             packet_proto_size(Protocol *proto);
-const uint8_t*  packet_proto_data(Protocol *proto);
-const char*     packet_proto_name(Protocol *proto);
+PROTOCOL packet_proto_proto(Protocol *proto);
+int packet_proto_size(Protocol *proto);
+const uint8_t* packet_proto_data(Protocol *proto);
+const char* packet_proto_name(Protocol *proto);
 ```
 
 ### IPv4 and IPv6 Protocols
 
 ```c
-int            packet_version(Packet *packet)
+int packet_version(Packet *packet)
 
-struct ipaddr  packet_srcaddr(Packet *packet)
-struct ipaddr  packet_dstaddr(Packet *packet)
+struct ipaddr packet_srcaddr(Packet *packet)
+struct ipaddr packet_dstaddr(Packet *packet)
 
-uint8_t        packet_protocol(Packet *packet)
-uint32_t       packet_id(Packet *packet)
-uint8_t        packet_ttl(Packet *packet)
-uint8_t        packet_tos(Packet *packet)
+uint8_t packet_protocol(Packet *packet)
+uint32_t packet_id(Packet *packet)
+uint8_t packet_ttl(Packet *packet)
+uint8_t packet_tos(Packet *packet)
 
-bool           packet_is_fragment(Packet *packet)
-bool           packet_frag_mf(Packet *packet)
-bool           packet_frag_df(Packet *packet)
-uint16_t       packet_frag_offset(Packet *packet)
+bool packet_is_fragment(Packet *packet)
+bool packet_frag_mf(Packet *packet)
+bool packet_frag_df(Packet *packet)
+uint16_t packet_frag_offset(Packet *packet)
 ```
 
 ### TCP, UDP and SCTP Protocols
 
 The following are applicable to all transport protocols:
 
-```
-uint16_t       packet_srcport(Packet *packet)
-uint16_t       packet_dstport(Packet *packet)
+```c
+uint16_t packet_srcport(Packet *packet)
+uint16_t packet_dstport(Packet *packet)
 ```
 
 ### TCP Protocol
@@ -151,18 +172,18 @@ uint16_t       packet_dstport(Packet *packet)
 The following methods return TCP specific decoded data.
 
 ```c
-uint32_t       packet_seq(Packet *packet)      // Sequence #
-uint32_t       packet_ack(Packet *packet)      // Acknowledgement #
-uint16_t       packet_mss(Packet *packet)
-uint16_t       packet_win(Packet *packet)
-uint16_t       packet_winscale(Packet *packet)
-int            packet_tcpflags(Packet *packet)
-bool           packet_tcp_fin(Packet *packet)
-bool           packet_tcp_syn(Packet *packet)
-bool           packet_tcp_rst(Packet *packet)
-bool           packet_tcp_push(Packet *packet)
-bool           packet_tcp_ack(Packet *packet)
-bool           packet_tcp_urg(Packet *packet)
+uint32_t packet_seq(Packet *packet) // Sequence #
+uint32_t packet_ack(Packet *packet) // Acknowledgement #
+uint16_t packet_mss(Packet *packet)
+uint16_t packet_win(Packet *packet)
+uint16_t packet_winscale(Packet *packet)
+int packet_tcpflags(Packet *packet)
+bool packet_tcp_fin(Packet *packet)
+bool packet_tcp_syn(Packet *packet)
+bool packet_tcp_rst(Packet *packet)
+bool packet_tcp_push(Packet *packet)
+bool packet_tcp_ack(Packet *packet)
+bool packet_tcp_urg(Packet *packet)
 ```
 
 ### Payload Pseudo-Protocol
@@ -182,16 +203,16 @@ support is builtin by default.
 
 
 ```c
-uint32_t        packet_raw_paysize(Packet *packet);
-const uint8_t*  packet_raw_payload(Packet *packet);
+uint32_t packet_raw_paysize(Packet *packet);
+uint8_t const* packet_raw_payload(Packet *packet);
 ```
 
 The raw payload refers to original wire bytes, never the alternate payload.
 
 
 ```c
-uint32_t        packet_paysize(Packet *packet);
-const uint8_t*  packet_payload(Packet *packet);
+uint32_t packet_paysize(Packet *packet);
+uint8_t const* packet_payload(Packet *packet);
 ```
 
 If `has_alt_payload`, the returned payload will point to Alternate payload
