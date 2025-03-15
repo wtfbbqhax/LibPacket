@@ -511,7 +511,13 @@ class DataPlaneWorker
     using threadname_t = char[256];
 
 public:
-    DataPlaneWorker(DaqConfig config, unsigned id, std::string filter, DAQ_Verdict verdict, DAQ_Verdict default_verdict, UDPPacketTemplate& packet)
+    DataPlaneWorker(
+            DaqConfig config,
+            unsigned id,
+            std::string filter,
+            DAQ_Verdict verdict,
+            DAQ_Verdict default_verdict,
+            UDPPacketTemplate& packet)
         : config(config),
           id(id),
           match_verdict(verdict),
@@ -651,10 +657,10 @@ private:
             print_packet(id, nullptr, reinterpret_cast<uint8_t const*>(&packet), pktlen);
             in.inject(reinterpret_cast<uint8_t const*>(&packet), pktlen);
 
-	    // Free some time to check the receive rings.
-	    if ((attack_i % 1024) == 0) {
-		return 1;
-	    }
+            // Free some time to check the receive rings.
+            if ((attack_i % 1024) == 0) {
+                return 1;
+            }
         }
 
 	// Complete
@@ -727,14 +733,12 @@ int main (int argc, char const *argv[])
         memcpy(&packet.eth.ether_dhost, hw, sizeof(packet.eth.ether_dhost));
     }
 
-    std::string payload = "********************************"
-	    		  "********************************"
-			  "********************************"
-			  "********************************"
-			  "********************************"
-			  "********************************"
-			  "********************************"
-			  "********************************";
+    //std::string payload(256, '*'); //C++20
+    std::string payload;
+    payload.reserve(256);
+    for (int i = 0; i < 256; ++i) {
+        payload += '*';
+    }
 
     /* IP Datagram */
     //int ip_len = FIXEDSIZE - sizeof(packet.eth) + payload.length();
