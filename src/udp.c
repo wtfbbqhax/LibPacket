@@ -43,6 +43,17 @@
 
 extern struct packet_stats s_stats;
 
+/*
+static inline int
+bind_udp(const uint8_t * pkt, const uint32_t len, Packet *p)
+{
+    int ret = -1;
+    if ((p->srcport == 53) || (p->dstport == 53))
+    	return decode_dns(pkt, len, p);
+    return 0;
+}
+*/
+
 int
 decode_udp(const uint8_t *pkt, const uint32_t len, Packet *p)
 {
