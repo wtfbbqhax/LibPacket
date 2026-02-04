@@ -56,8 +56,8 @@ target_sources(
 target_include_directories(
     packet
     BEFORE
-    PRIVATE "${CMAKE_SOURCE_DIR}/include"
-    PRIVATE "${CMAKE_SOURCE_DIR}"
+    PUBLIC "${CMAKE_SOURCE_DIR}/include"
+    PUBLIC "${CMAKE_SOURCE_DIR}"
 )
 
 install(
