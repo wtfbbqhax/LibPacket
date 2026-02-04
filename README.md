@@ -26,6 +26,28 @@ Expected to work on the following OSs:
  work on a different platform; please submit an issue.
 
 
+Requirements
+------------
+
+* CMake
+* gtest # GoogleTest
+* libpcap
+
+How to Build
+------------
+
+```sh
+# Build
+cmake -B build -G Ninja .
+cmake --build build
+
+# Execute gtests
+ctest --test-dir build --output-on-failure
+
+# Install
+cmake --install build
+```
+
 Protocol Support
 ----------------
 
